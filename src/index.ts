@@ -3,4 +3,4 @@
 export { calendarEventsTypeDefs } from './graphql/schema';
 export { calendarEventsResolvers } from './graphql/resolvers';
 export { CREATE_CALENDAR_EVENT } from './graphql/queries';
-export { CalendarEventsModule } from './calendar.module';
+export { CalendarEventsModule } from './common-mutual-credit.module';

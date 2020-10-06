@@ -11,7 +11,7 @@ function hashToString(hash: { hash: Buffer; hash_type: Buffer }) {
 
 // TODO: define your own resolvers
 
-export const calendarEventsResolvers = (
+export const commonMutualCreditResolvers = (
   appWebsocket: AppWebsocket,
   cellId: CellId,
   zomeName = 'calendar_events'

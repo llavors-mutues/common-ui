@@ -1,15 +1,13 @@
 {
-  "name": "todo-change-name-of-the-package",
+  "name": "@llavors-mutues/common",
   "version": "0.0.1",
-  "description": "TODO: change description",
+  "description": "Common UI elements and GraphQl infrastructure for mutual-credit applications",
   "author": "guillem.cordoba@gmail.com",
   "license": "MIT",
   "main": "index.js",
   "module": "index.js",
   "scripts": {
-    "start": "concurrently --kill-others \"npm:start-ui\" \"npm:start-holochain\"",
-    "start-ui": "CONDUCTOR_URL=ws://localhost:8888 concurrently -k --names tsc,dev-server \"npm run build-watch\" \"web-dev-server --config demo/web-dev-server.config.mjs\"",
-    "start-holochain": "RUST_LOG=warn holochain-run-dna ../zome/todo_rename_zome.dna.gz",
+    "start": "concurrently -k --names tsc,dev-server \"npm run build-watch\" \"web-dev-server --config demo/web-dev-server.config.mjs\"",
     "build": "rimraf dist && tsc",
     "build-watch": "tsc --watch",
     "test": "tsc && web-test-runner --coverage --puppeteer",

@@ -1,15 +1,13 @@
 import { ApolloClient } from '@apollo/client/core';
 import { HodCalendarEvent } from './elements/hod-calendar-event';
-import { calendarEventsTypeDefs } from './graphql/schema';
+import { mutualCreditTypeDefs } from './graphql/schema';
 import { setupApolloClientElement } from './utils';
 
-// TODO: define your dependencies
 export interface CalendarEventsModuleDependencies {
   apolloClient: ApolloClient<any>;
 }
 
-// TODO: add all your elements and dependencies
-export class CalendarEventsModule {
+export class CommonMutualCreditModule {
   constructor(protected dependencies: CalendarEventsModuleDependencies) {
     this.checkApolloClientTypeDefs(dependencies.apolloClient);
   }
