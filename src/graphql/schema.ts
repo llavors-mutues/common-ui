@@ -12,8 +12,10 @@ export const mutualCreditTypeDefs = gql`
 
   type Transaction {
     id: ID!
+
     spender: Agent!
     recipient: Agent!
+    
     amount: Float!
     timestamp: Date!
   }
@@ -38,7 +40,7 @@ export const mutualCreditTypeDefs = gql`
   }
 
   extend type Mutation {
-    createOffer(creditorId: ID!, amount: Float!): Offer!
+    createOffer(recipientId: ID!, amount: Float!): Offer!
     cancelOffer(offerId: ID!): ID!
     acceptOffer(offerId: ID!): Transaction!
   }

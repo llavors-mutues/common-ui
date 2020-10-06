@@ -1,8 +1,6 @@
-import { off } from 'process';
 import { randomHash } from './utils';
 
-// TODO: change the functions of this class to match the functions that your zome has
-export class CalendarEventsMock {
+export class PublicTransactorMock {
   constructor() {
     this.myAddress = randomHash();
     this.offers = {};
@@ -42,21 +40,20 @@ export class CalendarEventsMock {
     };
   }
 
-  get_my_balance() {
+  query_my_balance() {
     return Object.values(this.transactions).reduce(
       (acc, next) => acc + next.amount,
       0
     );
   }
 
-  get_all_my_offers() {
-    return Object.entries(this.offers).map(([key, value]) => ({
-      id: key,
-      ...value,
-    }));
+  query_all_my_offers() {
+    return Object.entries(this.offers);
   }
 
-  get_my_pending_offers() {
-    return this.get_all_my_offers().filter(offer => offer.status === 'Pending');
+  query_my_pending_offers() {
+    return this.query_all_my_offers().filter(
+      offer => offer[1].status === 'Pending'
+    );
   }
 }

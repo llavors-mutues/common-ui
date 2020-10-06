@@ -11,57 +11,64 @@ function hashToString(hash: { hash: Buffer; hash_type: Buffer }) {
 
 // TODO: define your own resolvers
 
-export const commonMutualCreditResolvers = (
+export function commonMutualCreditResolvers(
   appWebsocket: AppWebsocket,
   cellId: CellId,
-  zomeName = 'calendar_events'
-): Resolvers => ({
-  Query: {
-    async allCalendarEvents() {
-      const events = await appWebsocket.callZome({
-        cap: null as any,
-        cell_id: cellId,
-        zome_name: zomeName,
-        fn_name: 'get_all_calendar_events',
-        payload: null,
-        provenance: cellId[1],
-      });
+  zomeName = 'transactor'
+): Resolvers {
+  function callZome(fn_name: string, payload: any) {
+    return appWebsocket.callZome({
+      cap: null as any,
+      cell_id: cellId,
+      zome_name: zomeName,
+      fn_name,
+      payload,
+      provenance: cellId[1],
+    });
+  }
 
-      return events.map((event: any) => ({
-        id: hashToString(event[0]),
-        ...event[1],
-      }));
+  return {
+    Transaction: {
+      spender(parent) {
+        return { id: parent.spender_pub_key };
+      },
+      recipient(parent) {
+        return { id: parent.recipient_pub_key };
+      },
     },
-  },
-  Mutation: {
-    async createCalendarEvent(
-      _,
-      { title, startTime, endTime, location, invitees }
-    ) {
-      const eventId = await appWebsocket.callZome({
-        cap: null as any,
-        cell_id: cellId,
-        zome_name: zomeName,
-        fn_name: 'create_calendar_event',
-        payload: {
-          title,
-          start_time: secondsToTimestamp(startTime),
-          end_time: secondsToTimestamp(endTime),
-          location,
-          invitees,
-        },
-        provenance: cellId[1],
-      });
+    Query: {
+      async myTransactions(_, __) {
+        const transactions = await callZome('query_my_transactions', null);
+        return transactions.map((t: any) => ({ id: t[0], ...t[1] }));
+      },
+      async myPendingOffers(_, __) {
+        const offers = await callZome('query_my_pending_offers', null);
 
-      return {
-        id: hashToString(eventId),
-        createdBy: hashToString(cellId[1]),
-        title,
-        startTime,
-        endTime,
-        invitees,
-        location,
-      };
+        return offers.map((offer: any) => ({ id: offer[0], ...offer[1] }));
+      },
+      async myBalance(_, __) {
+        return callZome('query_my_balance', null);
+      },
     },
-  },
-});
+    Mutation: {
+      async createOffer(_, { recipientId, amount }) {
+        return callZome('create_offer', {
+          recipient_pub_key: recipientId,
+          amount,
+        });
+      },
+      async acceptOffer(_, { offerId }) {
+        return callZome('accept_offer', {
+          offer_hash: offerId,
+        });
+      },
+      async cancelOffer(_, { offerId }) {
+        await callZome('cancel_offer', {
+          offer_hash: offerId,
+        });
+
+        return offerId;
+      },
+    },
+  };
+}
