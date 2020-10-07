@@ -12,6 +12,6 @@ export class AppWebsocketMock {
   }
 
   async callZome({ cap, cell_id, zome_name, fn_name, payload, provenance }) {
-    return this.dnaMock[fn_name](payload);
+    return this.dnaMock[fn_name](payload, provenance);
   }
 }

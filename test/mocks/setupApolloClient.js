@@ -10,6 +10,7 @@ import {
 import { mutualCreditResolvers, mutualCreditTypeDefs } from '../../dist';
 import { AppWebsocketMock } from './AppWebsocket.mock';
 import { PublicTransactorMock } from './transactor.mock';
+import { hashToString } from './utils';
 
 const rootTypeDef = gql`
   type Query {
@@ -27,11 +28,11 @@ const allTypeDefs = [
   mutualCreditTypeDefs,
 ];
 
+const dnaMock = new PublicTransactorMock();
 async function getAppWebsocket() {
   if (process.env.CONDUCTOR_URL)
     return AppWebsocket.connect(process.env.CONDUCTOR_URL);
   else {
-    const dnaMock = new PublicTransactorMock();
     return new AppWebsocketMock(dnaMock);
   }
 }
@@ -57,10 +58,16 @@ export async function setupApolloClient() {
 
   const schemaLink = new SchemaLink({ schema: executableSchema });
 
-  return new ApolloClient({
+  const client = new ApolloClient({
     typeDefs: allTypeDefs,
 
     cache: new InMemoryCache(),
     link: schemaLink,
   });
+
+  return {
+    client,
+    appWebsocket,
+    agentAddress: hashToString(cellId[1]),
+  };
 }

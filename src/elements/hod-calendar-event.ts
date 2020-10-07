@@ -3,7 +3,7 @@ import { html, LitElement, property } from 'lit-element';
 import { sharedStyles } from '../sharedStyles';
 
 // TODO: create your own elements
-export abstract class HodCalendarEvent extends LitElement {
+export class HodCalendarEvent extends LitElement {
   /** Public attributes */
 
   /**
@@ -12,7 +12,6 @@ export abstract class HodCalendarEvent extends LitElement {
   @property({ type: String }) title = 'Hey there';
 
   /** Dependencies */
-  abstract get _apolloClient(): ApolloClient<any>;
 
   /** Private properties */
 

@@ -47,8 +47,18 @@ export class PublicTransactorMock {
     );
   }
 
-  query_all_my_offers() {
-    return Object.entries(this.offers);
+  isMine(offerOrTransaction, provenance) {
+    console.log(provenance, offerOrTransaction)
+    return (
+      offerOrTransaction.recipient === provenance ||
+      offerOrTransaction.spender === provenance
+    );
+  }
+
+  query_all_my_offers(params, provenance) {
+    return Object.entries(this.offers).filter(([_, offer]) =>
+      this.isMine(offer, provenance)
+    );
   }
 
   query_my_pending_offers() {
@@ -57,7 +67,9 @@ export class PublicTransactorMock {
     );
   }
 
-  query_my_transactions() {
-    return Object.entries(this.transactions);
+  query_my_transactions(params, provenance) {
+    return Object.entries(this.transactions).filter(([_, transaction]) =>
+      this.isMine(transaction, provenance)
+    );
   }
 }
