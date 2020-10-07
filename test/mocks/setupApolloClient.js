@@ -2,10 +2,14 @@ import { gql, ApolloClient, InMemoryCache } from '@apollo/client/core';
 import { SchemaLink } from '@apollo/client/link/schema';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { AppWebsocket } from '@holochain/conductor-api';
+import {
+  profilesUsernameResolvers,
+  profilesUsernameTypeDefs,
+} from 'holochain-profiles-username';
 
-import { calendarEventsTypeDefs, calendarEventsResolvers } from '../../dist';
+import { mutualCreditResolvers, mutualCreditTypeDefs } from '../../dist';
 import { AppWebsocketMock } from './AppWebsocket.mock';
-import { CalendarEventsMock } from './calendar-events.mock';
+import { PublicTransactorMock } from './transactor.mock';
 
 const rootTypeDef = gql`
   type Query {
@@ -17,13 +21,17 @@ const rootTypeDef = gql`
   }
 `;
 
-// TODO: add your own typeDefs to rootTypeDef
-const allTypeDefs = [rootTypeDef, calendarEventsTypeDefs];
+const allTypeDefs = [
+  rootTypeDef,
+  profilesUsernameTypeDefs,
+  mutualCreditTypeDefs,
+];
 
 async function getAppWebsocket() {
-  if (process.env.CONDUCTOR_URL) return AppWebsocket.connect(process.env.CONDUCTOR_URL);
+  if (process.env.CONDUCTOR_URL)
+    return AppWebsocket.connect(process.env.CONDUCTOR_URL);
   else {
-    const dnaMock = new CalendarEventsMock();
+    const dnaMock = new PublicTransactorMock();
     return new AppWebsocketMock(dnaMock);
   }
 }
@@ -41,7 +49,10 @@ export async function setupApolloClient() {
 
   const executableSchema = makeExecutableSchema({
     typeDefs: allTypeDefs,
-    resolvers: [calendarEventsResolvers(appWebsocket, cellId)],
+    resolvers: [
+      profilesUsernameResolvers(appWebsocket, cellId),
+      mutualCreditResolvers(appWebsocket, cellId),
+    ],
   });
 
   const schemaLink = new SchemaLink({ schema: executableSchema });

@@ -56,4 +56,8 @@ export class PublicTransactorMock {
       offer => offer[1].status === 'Pending'
     );
   }
+
+  query_my_transactions() {
+    return Object.entries(this.transactions);
+  }
 }

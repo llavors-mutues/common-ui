@@ -8,7 +8,7 @@ export const GET_MY_BALANCE = gql`
 
 export const GET_MY_TRANSACTIONS = gql`
   query GetMyTransactions {
-    myTransactions
+    myTransactions {
       id
       spender {
         id
@@ -24,7 +24,7 @@ export const GET_MY_TRANSACTIONS = gql`
   }
 `;
 
-export const GET_PENDING_OFFERS = gql`
+export const GET_MY_PENDING_OFFERS = gql`
   query GetPendingOffers {
     myPendingOffers {
       id

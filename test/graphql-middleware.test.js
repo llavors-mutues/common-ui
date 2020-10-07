@@ -2,39 +2,39 @@ import { gql } from '@apollo/client/core';
 import { expect } from '@open-wc/testing';
 
 import { setupApolloClient } from './mocks/setupApolloClient';
-import { CREATE_CALENDAR_EVENT } from '../dist';
+import {
+  ACCEPT_OFFER,
+  CANCEL_OFFER,
+  CREATE_OFFER,
+  GET_MY_BALANCE,
+  GET_MY_TRANSACTIONS,
+  GET_MY_PENDING_OFFERS,
+} from '../dist';
 
-// TODO: change mutations and tests to adapt to your graphql queries
 describe('Apollo middleware', () => {
-  it('create a calendar event and retrieve it', async () => {
+  it('initial state is empty', async () => {
     const client = await setupApolloClient();
 
-    const createCalendarEvent = await client.mutate({
-      mutation: CREATE_CALENDAR_EVENT,
-      variables: {
-        title: 'Event 1',
-        startTime: Math.floor(Date.now() / 1000),
-        endTime: Math.floor(Date.now() / 1000) + 10,
-        location: null,
-        invitees: [],
-      },
+    const getMyBalance = await client.query({
+      query: GET_MY_BALANCE,
     });
+    expect(getMyBalance.data.myBalance).to.equal(0);
 
-    const result = await client.query({
-      query: gql`
-        {
-          allCalendarEvents {
-            id
-            title
-          }
-        }
-      `,
+    const getMyTransactions = await client.query({
+      query: GET_MY_TRANSACTIONS,
     });
+    expect(getMyTransactions.data.myTransactions.length).to.equal(0);
 
-    expect(result.data.allCalendarEvents.length).to.equal(1);
-    expect(result.data.allCalendarEvents[0].id).to.equal(
-      createCalendarEvent.data.createCalendarEvent.id
-    );
-    expect(result.data.allCalendarEvents[0].title).to.equal('Event 1');
+    const getMyOffers = await client.query({
+      query: GET_MY_PENDING_OFFERS,
+    });
+    expect(getMyOffers.data.myPendingOffers.length).to.equal(0);
+  });
+
+  it('create and offer and accept it', async () => {
+    const client = await setupApolloClient();
+
+    
+
   });
 });

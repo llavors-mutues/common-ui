@@ -11,7 +11,7 @@ function hashToString(hash: { hash: Buffer; hash_type: Buffer }) {
 
 // TODO: define your own resolvers
 
-export function commonMutualCreditResolvers(
+export function mutualCreditResolvers(
   appWebsocket: AppWebsocket,
   cellId: CellId,
   zomeName = 'transactor'
