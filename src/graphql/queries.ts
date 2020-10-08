@@ -46,13 +46,41 @@ export const GET_MY_PENDING_OFFERS = gql`
 
 export const CREATE_OFFER = gql`
   mutation CreateOffer($recipientId: ID!, $amount: Float!) {
-    createOffer(recipientId: $recipientId, amount: $amount)
+    createOffer(recipientId: $recipientId, amount: $amount) {
+      id
+
+      spender {
+        id
+        username
+      }
+      recipient {
+        id
+        username
+      }
+      amount
+
+      state
+    }
   }
 `;
 
 export const ACCEPT_OFFER = gql`
   mutation AcceptOffer($offerId: ID!) {
-    acceptOffer(offerId: $offerId)
+    acceptOffer(offerId: $offerId) {
+      id
+
+      spender {
+        id
+        username
+      }
+      recipient {
+        id
+        username
+      }
+      amount
+
+      timestamp
+    }
   }
 `;
 

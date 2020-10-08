@@ -9,7 +9,7 @@ import {
   GET_MY_TRANSACTIONS,
   GET_MY_PENDING_OFFERS,
 } from '../dist';
-import { HodCalendarEvent } from '../dist/elements/hod-calendar-event';
+import { SET_USERNAME } from 'holochain-profiles-username';
 
 function createIframe() {
   const iframe = document.createElement('iframe');
@@ -52,16 +52,48 @@ describe('Apollo middleware', () => {
     } = await setupApolloClient();
 
     await aliceClient.mutate({
+      mutation: SET_USERNAME,
+      variables: {
+        username: 'alice',
+      },
+    });
+    await bobClient.mutate({
+      mutation: SET_USERNAME,
+      variables: {
+        username: 'bob',
+      },
+    });
+
+    const offer = await aliceClient.mutate({
       mutation: CREATE_OFFER,
       variables: {
         recipientId: bobAddress,
         amount: 10.0,
       },
     });
+    expect(offer.data.createOffer.amount).to.equal(10.0);
 
     const getMyOffers = await bobClient.query({
       query: GET_MY_PENDING_OFFERS,
     });
     expect(getMyOffers.data.myPendingOffers.length).to.equal(1);
+
+    const transaction = await bobClient.mutate({
+      mutation: ACCEPT_OFFER,
+      variables: {
+        offerId: getMyOffers.data.myPendingOffers[0].id,
+      },
+    });
+    expect(transaction.data.acceptOffer.id).to.be.ok;
+
+    let getMyBalance = await aliceClient.query({
+      query: GET_MY_BALANCE,
+    });
+    expect(getMyBalance.data.myBalance).to.equal(-10.0);
+
+    getMyBalance = await bobClient.query({
+      query: GET_MY_BALANCE,
+    });
+    expect(getMyBalance.data.myBalance).to.equal(10.0);
   });
 });

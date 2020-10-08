@@ -36,6 +36,14 @@ export function mutualCreditResolvers(
         return { id: parent.recipient_pub_key };
       },
     },
+    Offer: {
+      spender(parent) {
+        return { id: parent.spender_pub_key };
+      },
+      recipient(parent) {
+        return { id: parent.recipient_pub_key };
+      },
+    },
     Query: {
       async myTransactions(_, __) {
         const transactions = await callZome('query_my_transactions', null);
@@ -46,21 +54,36 @@ export function mutualCreditResolvers(
 
         return offers.map((offer: any) => ({ id: offer[0], ...offer[1] }));
       },
+      async allMyOffers(_, __) {
+        const offers = await callZome('query_all_my_offers', null);
+
+        return offers.map((offer: any) => ({ id: offer[0], ...offer[1] }));
+      },
       async myBalance(_, __) {
         return callZome('query_my_balance', null);
       },
     },
     Mutation: {
       async createOffer(_, { recipientId, amount }) {
-        return callZome('create_offer', {
+        const offer = await callZome('create_offer', {
           recipient_pub_key: recipientId,
           amount,
         });
+
+        return {
+          id: offer[0],
+          ...offer[1],
+        };
       },
       async acceptOffer(_, { offerId }) {
-        return callZome('accept_offer', {
+        const transaction = await callZome('accept_offer', {
           offer_hash: offerId,
         });
+        
+        return {
+          id: transaction[0],
+          ...transaction[1],
+        };
       },
       async cancelOffer(_, { offerId }) {
         await callZome('cancel_offer', {

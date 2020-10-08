@@ -6,11 +6,16 @@ import {
   profilesUsernameResolvers,
   profilesUsernameTypeDefs,
 } from 'holochain-profiles-username';
+import { ProfilesMock } from 'holochain-profiles-username/mocks/profiles.mock';
+import {
+  AppWebsocketMock,
+  DnaMock,
+  hashToString,
+  randomHash,
+} from 'holochain-ui-test-utils';
 
 import { mutualCreditResolvers, mutualCreditTypeDefs } from '../../dist';
-import { AppWebsocketMock } from './AppWebsocket.mock';
 import { PublicTransactorMock } from './transactor.mock';
-import { hashToString } from './utils';
 
 const rootTypeDef = gql`
   type Query {
@@ -28,12 +33,15 @@ const allTypeDefs = [
   mutualCreditTypeDefs,
 ];
 
-const dnaMock = new PublicTransactorMock();
+const dnaMock = new DnaMock({
+  profiles: new ProfilesMock(),
+  transactor: new PublicTransactorMock(),
+});
 async function getAppWebsocket() {
   if (process.env.CONDUCTOR_URL)
     return AppWebsocket.connect(process.env.CONDUCTOR_URL);
   else {
-    return new AppWebsocketMock(dnaMock);
+    return new AppWebsocketMock([dnaMock]);
   }
 }
 

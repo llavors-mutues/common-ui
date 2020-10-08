@@ -1,23 +1,22 @@
-import { randomHash } from './utils';
+import { hashToString, randomHash } from 'holochain-ui-test-utils';
 
 export class PublicTransactorMock {
   constructor() {
-    this.myAddress = randomHash();
     this.offers = {};
     this.transactions = {};
   }
 
-  create_offer({ amount, recipient_pub_key }) {
-    const newId = randomHash();
+  create_offer({ amount, recipient_pub_key }, provenance) {
+    const newId = hashToString(randomHash());
 
     this.offers[newId] = {
-      status: 'Pending',
-      spender: this.myAddress,
-      recipient: recipient_pub_key,
+      state: 'Pending',
+      spender_pub_key: hashToString(provenance),
+      recipient_pub_key: recipient_pub_key,
       amount: amount,
     };
 
-    return { id: newId, ...this.offers[newId] };
+    return [newId, this.offers[newId]];
   }
 
   cancel_offer({ offer_hash }) {
@@ -27,31 +26,36 @@ export class PublicTransactorMock {
   accept_offer({ offer_hash }) {
     this.offers[offer_hash].status = 'Completed';
 
-    const newId = randomHash();
+    const newId = hashToString(randomHash());
     const transaction = {
       ...this.offers[offer_hash],
       timestamp: [Math.floor(Date.now() / 1000)],
     };
     this.transactions[newId] = transaction;
 
-    return {
-      id: newId,
-      ...transaction,
-    };
+    return [newId, transaction];
   }
 
-  query_my_balance() {
-    return Object.values(this.transactions).reduce(
-      (acc, next) => acc + next.amount,
+  query_my_balance(params, provenance) {
+    return this.query_my_transactions(params, provenance).reduce(
+      (acc, next) => acc + this.getPartialBalance(next[1], provenance),
       0
     );
   }
 
+  getPartialBalance(transaction, provenance) {
+    if (transaction.spender_pub_key === hashToString(provenance))
+      return -transaction.amount;
+    else if (transaction.recipient_pub_key === hashToString(provenance))
+      return transaction.amount;
+  }
+
   isMine(offerOrTransaction, provenance) {
-    console.log(provenance, offerOrTransaction)
+    const stringHash = hashToString(provenance);
+
     return (
-      offerOrTransaction.recipient === provenance ||
-      offerOrTransaction.spender === provenance
+      offerOrTransaction.recipient_pub_key === stringHash ||
+      offerOrTransaction.spender_pub_key === stringHash
     );
   }
 
@@ -61,9 +65,9 @@ export class PublicTransactorMock {
     );
   }
 
-  query_my_pending_offers() {
-    return this.query_all_my_offers().filter(
-      offer => offer[1].status === 'Pending'
+  query_my_pending_offers(params, provenance) {
+    return this.query_all_my_offers(params, provenance).filter(
+      offer => offer[1].state === 'Pending'
     );
   }
 
