@@ -24,16 +24,22 @@ function createIframe() {
 describe('Apollo middleware', () => {
   it('initial state is empty', async () => {
     const { client } = await setupApolloClient();
+    await client.mutate({
+      mutation: SET_USERNAME,
+      variables: {
+        username: 'alice',
+      },
+    });
 
     const getMyBalance = await client.query({
       query: GET_MY_BALANCE,
     });
-    expect(getMyBalance.data.myBalance).to.equal(0);
+    expect(getMyBalance.data.me.balance).to.equal(0);
 
     const getMyTransactions = await client.query({
       query: GET_MY_TRANSACTIONS,
     });
-    expect(getMyTransactions.data.myTransactions.length).to.equal(0);
+    expect(getMyTransactions.data.me.transactions.length).to.equal(0);
 
     const getMyOffers = await client.query({
       query: GET_MY_PENDING_OFFERS,
@@ -89,11 +95,11 @@ describe('Apollo middleware', () => {
     let getMyBalance = await aliceClient.query({
       query: GET_MY_BALANCE,
     });
-    expect(getMyBalance.data.myBalance).to.equal(-10.0);
+    expect(getMyBalance.data.me.balance).to.equal(-10.0);
 
     getMyBalance = await bobClient.query({
       query: GET_MY_BALANCE,
     });
-    expect(getMyBalance.data.myBalance).to.equal(10.0);
+    expect(getMyBalance.data.me.balance).to.equal(10.0);
   });
 });

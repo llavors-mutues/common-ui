@@ -6,6 +6,7 @@ export const mutualCreditTypeDefs = gql`
   enum OfferState {
     Pending
     Canceled
+    Rejected
     Approved
     Completed
   }
@@ -30,17 +31,20 @@ export const mutualCreditTypeDefs = gql`
     amount: Float!
   }
 
+  extend type Agent {
+    transactions: [Transaction!]!
+    balance: Float!
+  }
+
   extend type Query {
-    myTransactions: [Transaction!]!
-    
     myPendingOffers: [Offer!]!
     allMyOffers: [Offer!]!
-
-    myBalance: Float!
+    offer(offerId: ID!): Offer!
   }
 
   extend type Mutation {
     createOffer(recipientId: ID!, amount: Float!): Offer!
+    rejectOffer(offerId: ID!): ID!
     cancelOffer(offerId: ID!): ID!
     acceptOffer(offerId: ID!): Transaction!
   }

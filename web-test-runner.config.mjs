@@ -13,6 +13,7 @@ export default {
   open: debug,
   nodeResolve: {
     browser: true,
+    dedupe: ['@material/base'],
   },
   plugins,
   browsers: [

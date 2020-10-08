@@ -1,5 +1,9 @@
 import { ApolloClient } from '@apollo/client/core';
-import { HodCalendarEvent } from './elements/hod-calendar-event';
+import { LlmPubAgentList } from './elements/llm-pub-agent-list';
+import { LlmPubCreateOffer } from './elements/llm-pub-create-offer';
+import { LlmPubOfferDetail } from './elements/llm-pub-offer-detail';
+import { LlmPubPendingOfferList } from './elements/llm-pub-pending-offer-list';
+import { LlmPubTransactionList } from './elements/llm-pub-transaction-list';
 import { mutualCreditTypeDefs } from './graphql/schema';
 import { setupApolloClientElement } from './utils';
 
@@ -18,13 +22,41 @@ export class PublicTransactionsMutualCreditModule {
 
   install() {
     customElements.define(
-      'hod-calendar-event',
-      setupApolloClientElement(HodCalendarEvent, this.dependencies.apolloClient)
+      'llm-pub-agent-list',
+      setupApolloClientElement(LlmPubAgentList, this.dependencies.apolloClient)
+    );
+    customElements.define(
+      'llm-pub-create-offer',
+      setupApolloClientElement(
+        LlmPubCreateOffer,
+        this.dependencies.apolloClient
+      )
+    );
+    customElements.define(
+      'llm-pub-offer-detail',
+      setupApolloClientElement(
+        LlmPubOfferDetail,
+        this.dependencies.apolloClient
+      )
+    );
+    customElements.define(
+      'llm-pub-pending-offer-list',
+      setupApolloClientElement(
+        LlmPubPendingOfferList,
+        this.dependencies.apolloClient
+      )
+    );
+    customElements.define(
+      'llm-pub-transaction-list',
+      setupApolloClientElement(
+        LlmPubTransactionList,
+        this.dependencies.apolloClient
+      )
     );
   }
 
   static isInstalled(): boolean {
-    return customElements.get('hod-calendar-event');
+    return customElements.get('llm-pub-agent-list');
   }
 
   /** Private helpers */

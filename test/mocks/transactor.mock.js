@@ -19,8 +19,22 @@ export class PublicTransactorMock {
     return [newId, this.offers[newId]];
   }
 
-  cancel_offer({ offer_hash }) {
-    this.offers[offer_hash].status = 'Canceled';
+  cancel_offer({ offer_hash }, provenance) {
+    const offer = this.offers[offer_hash];
+
+    if (offer.spender_pub_key !== hashToString(provenance))
+      throw new Error('Cannot cancel an offer you did not create');
+
+    offer.status = 'Canceled';
+  }
+
+  reject_offer({ offer_hash }, provenance) {
+    const offer = this.offers[offer_hash];
+
+    if (offer.recipient_pub_key !== hashToString(provenance))
+      throw new Error('Cannot reject an offer you did not receive');
+
+    offer.status = 'Rejected';
   }
 
   accept_offer({ offer_hash }) {
@@ -36,32 +50,9 @@ export class PublicTransactorMock {
     return [newId, transaction];
   }
 
-  query_my_balance(params, provenance) {
-    return this.query_my_transactions(params, provenance).reduce(
-      (acc, next) => acc + this.getPartialBalance(next[1], provenance),
-      0
-    );
-  }
-
-  getPartialBalance(transaction, provenance) {
-    if (transaction.spender_pub_key === hashToString(provenance))
-      return -transaction.amount;
-    else if (transaction.recipient_pub_key === hashToString(provenance))
-      return transaction.amount;
-  }
-
-  isMine(offerOrTransaction, provenance) {
-    const stringHash = hashToString(provenance);
-
-    return (
-      offerOrTransaction.recipient_pub_key === stringHash ||
-      offerOrTransaction.spender_pub_key === stringHash
-    );
-  }
-
   query_all_my_offers(params, provenance) {
     return Object.entries(this.offers).filter(([_, offer]) =>
-      this.isMine(offer, provenance)
+      this.isOfAgent(offer, hashToString(provenance))
     );
   }
 
@@ -71,9 +62,34 @@ export class PublicTransactorMock {
     );
   }
 
-  query_my_transactions(params, provenance) {
+  get_transactions_for_agent({ agent_pub_key }) {
     return Object.entries(this.transactions).filter(([_, transaction]) =>
-      this.isMine(transaction, provenance)
+      this.isOfAgent(transaction, agent_pub_key)
+    );
+  }
+
+  get_balance_for_agent({ agent_pub_key }) {
+    return this.get_transactions_for_agent({ agent_pub_key }).reduce(
+      (acc, next) => acc + this.getPartialBalance(next[1], agent_pub_key),
+      0
+    );
+  }
+
+  /** Private helpers */
+
+  getPartialBalance(transaction, agent_pub_key) {
+    if (transaction.spender_pub_key === agent_pub_key)
+      return -transaction.amount;
+    else if (transaction.recipient_pub_key === agent_pub_key)
+      return transaction.amount;
+  }
+
+  isOfAgent(offerOrTransaction, agent_pub_key) {
+    const stringHash = agent_pub_key;
+
+    return (
+      offerOrTransaction.recipient_pub_key === stringHash ||
+      offerOrTransaction.spender_pub_key === stringHash
     );
   }
 }

@@ -44,23 +44,27 @@ export function mutualCreditResolvers(
         return { id: parent.recipient_pub_key };
       },
     },
-    Query: {
-      async myTransactions(_, __) {
-        const transactions = await callZome('query_my_transactions', null);
+    Agent: {
+      async balance(parent) {
+        return callZome('get_balance_for_agent', { agent_pub_key: parent.id });
+      },
+      async transactions(parent) {
+        const transactions = await callZome('get_transactions_for_agent', {
+          agent_pub_key: parent.id,
+        });
         return transactions.map((t: any) => ({ id: t[0], ...t[1] }));
       },
-      async myPendingOffers(_, __) {
+    },
+    Query: {
+      async myPendingOffers() {
         const offers = await callZome('query_my_pending_offers', null);
 
         return offers.map((offer: any) => ({ id: offer[0], ...offer[1] }));
       },
-      async allMyOffers(_, __) {
+      async allMyOffers() {
         const offers = await callZome('query_all_my_offers', null);
 
         return offers.map((offer: any) => ({ id: offer[0], ...offer[1] }));
-      },
-      async myBalance(_, __) {
-        return callZome('query_my_balance', null);
       },
     },
     Mutation: {
@@ -79,7 +83,7 @@ export function mutualCreditResolvers(
         const transaction = await callZome('accept_offer', {
           offer_hash: offerId,
         });
-        
+
         return {
           id: transaction[0],
           ...transaction[1],
@@ -87,6 +91,13 @@ export function mutualCreditResolvers(
       },
       async cancelOffer(_, { offerId }) {
         await callZome('cancel_offer', {
+          offer_hash: offerId,
+        });
+
+        return offerId;
+      },
+      async rejectOffer(_, { offerId }) {
+        await callZome('reject_offer', {
           offer_hash: offerId,
         });
 
