@@ -9,18 +9,26 @@
     </style>
   </head>
   <body>
-    <!-- TODO: change the element -->
-    <hod-calendar-event></hod-calendar-event>
+    <hpu-username-prompt>
+      <div style="display: flex; flex-direction: column">
+        <llm-pub-agent-list style="flex: 1"></llm-pub-agent-list>
+        <llm-pub-transaction-list style="flex: 1"></llm-pub-transaction-list>
+      </div>
+    </hpu-username-prompt>
 
     <script type="module">
       import { html, render } from 'lit-html';
-      import { CalendarEventsModule } from '../dist';
+      import { ProfilesUsernameModule } from 'holochain-profiles-username';
+      import { PublicTransactionsMutualCreditModule } from '../dist';
       import { setupApolloClient } from '../test/mocks/setupApolloClient';
 
-      // TODO: change the module name
-      setupApolloClient().then(client =>
-        new CalendarEventsModule({ apolloClient: client }).install()
-      );
+      setupApolloClient().then(({ client }) => {
+        const deps = {
+          apolloClient: client,
+        };
+        new ProfilesUsernameModule(deps).install();
+        new PublicTransactionsMutualCreditModule(deps).install();
+      });
     </script>
   </body>
 </html>
