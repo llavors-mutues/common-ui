@@ -1,15 +1,12 @@
 import { LitElement, html, property, query } from 'lit-element';
-import { ApolloClient } from '@apollo/client/core';
-import { CREATE_OFFER } from '../graphql/queries';
 
-import { Agent } from 'holochain-profiles-username';
-import '@material/mwc-textfield';
-import '@material/mwc-button';
-import type { TextFieldBase } from '@material/mwc-textfield/mwc-textfield-base';
+import { TextField } from 'scoped-material-components/mwc-textfield';
+import { Button } from 'scoped-material-components/mwc-button';
 
 import { sharedStyles } from '../sharedStyles';
+import { BaseElement } from './base-element';
 
-export abstract class LlmPubCreateOffer extends LitElement {
+export class LlmPubCreateOffer extends BaseElement {
   /** Public attributes */
 
   /**
@@ -20,18 +17,15 @@ export abstract class LlmPubCreateOffer extends LitElement {
 
   // The recipient agent of the offer. If not given, will enable the recipient field of the form
   @property({ type: String })
-  recipient: Agent | undefined = undefined;
-
-  /** Dependencies */
-  abstract _apolloClient: ApolloClient<any>;
+  recipientPubKey: string | undefined = undefined;
 
   /** Private properties */
 
   @query('#amount')
-  _amountField!: TextFieldBase;
+  _amountField!: TextField;
 
   @query('#creditor')
-  _recipientField!: TextFieldBase;
+  _recipientField!: TextField;
 
   static styles = sharedStyles;
 
@@ -52,19 +46,14 @@ export abstract class LlmPubCreateOffer extends LitElement {
   }
 
   async createOffer() {
-    const recipientId = this._recipientField.value;
+    const recipientPubKey = this._recipientField.value;
     const amount = parseFloat(this._amountField.value);
-    await this._apolloClient.mutate({
-      mutation: CREATE_OFFER,
-      variables: {
-        recipientId,
-        amount,
-      },
-    });
+    
+    await this._transactorService.createOffer(recipientPubKey, amount);
 
     this.dispatchEvent(
       new CustomEvent('offer-created', {
-        detail: { recipientId, amount },
+        detail: { recipientPubKey, amount },
         composed: true,
         bubbles: true,
       })
@@ -81,16 +70,13 @@ export abstract class LlmPubCreateOffer extends LitElement {
         <div class="column center-content">
           <span>
             You are about to create an offer
-            ${this.recipient ? `to @${this.recipient.username}` : ''}, which
+            ${this.recipientPubKey ? `to @${this.recipientPubKey}` : ''}, which
             would lower your balance by the amount of the transaction and raise
             the creditor's value by the same amount.
-            <br /><br />
-            This will let the creditor scan your source chain to validate your
-            transaction history.
           </span>
           <mwc-textfield
-            .disabled=${this.recipient !== undefined}
-            .value=${this.recipient ? this.recipient.id : ''}
+            .disabled=${this.recipientPubKey !== undefined}
+            .value=${this.recipientPubKey ? this.recipientPubKey : ''}
             style="padding: 16px 0; width: 24em;"
             id="creditor"
             label="Creditor"
@@ -123,5 +109,12 @@ export abstract class LlmPubCreateOffer extends LitElement {
         </mwc-button>
       </mwc-dialog>
     `;
+  }
+
+  static get scopedElements() {
+    return {
+      'mwc-textfield': TextField,
+      'mwc-button': Button,
+    };
   }
 }

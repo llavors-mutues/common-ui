@@ -1,51 +1,48 @@
 import { LitElement, property, html } from 'lit-element';
-import { ApolloClient } from '@apollo/client/core';
+import { Hashed } from '@holochain-open-dev/common';
 
-import '@material/mwc-list';
-import '@material/mwc-circular-progress';
-import type { Agent } from 'holochain-profiles-username';
+import { List } from 'scoped-material-components/mwc-list';
+import { CircularProgress } from 'scoped-material-components/mwc-circular-progress';
 
-import { GET_MY_TRANSACTIONS } from '../graphql/queries';
 import type { Transaction } from '../types';
 import { sharedStyles } from '../sharedStyles';
 import { dateString } from '../utils';
+import { BaseElement } from './base-element';
+import { Icon } from 'scoped-material-components/mwc-icon';
+import { ListItem } from 'scoped-material-components/mwc-list-item';
 
-export abstract class LlmPubTransactionList extends LitElement {
+export abstract class LlmPubTransactionList extends BaseElement {
   /** Public attributes */
-
-  /** Dependencies */
-  abstract _apolloClient: ApolloClient<any>;
 
   /** Private properties */
 
   @property({ type: String })
-  _myAgentId!: string;
+  _myAgentPubKey!: string;
 
   @property({ type: Object, attribute: false })
-  _transactions!: Array<Transaction>;
+  _transactions!: Array<Hashed<Transaction>>;
 
   static styles = sharedStyles;
 
-  async firstUpdated() {
-    const result = await this._apolloClient.query({
-      query: GET_MY_TRANSACTIONS,
-      fetchPolicy: 'network-only',
-    });
+  async loadTransactions() {
+    this._myAgentPubKey = await this._transactorService.getMyPublicKey();
+    this._transactions = await this._transactorService.getAgentTransactions(
+      this._myAgentPubKey
+    );
 
-    this._myAgentId = result.data.me.id;
-    this._transactions = result.data.me.transactions.sort(
-      (t1: Transaction, t2: Transaction) => t2.timestamp - t1.timestamp
+    this._transactions = this._transactions.sort(
+      (t1, t2) => t2.content.timestamp - t1.content.timestamp
     );
   }
 
-  isOutgoing(transaction: Transaction) {
-    return transaction.spender.id === this._myAgentId;
+  isOutgoing(transaction: Hashed<Transaction>) {
+    return transaction.content.spender_pub_key === this._myAgentPubKey;
   }
 
-  getCounterparty(transaction: Transaction): Agent {
-    return transaction.recipient.id === this._myAgentId
-      ? transaction.spender
-      : transaction.recipient;
+  getCounterparty(transaction: Hashed<Transaction>): string {
+    return transaction.content.recipient_pub_key === this._myAgentPubKey
+      ? transaction.content.spender_pub_key
+      : transaction.content.recipient_pub_key;
   }
 
   render() {
@@ -83,11 +80,11 @@ export abstract class LlmPubTransactionList extends LitElement {
               >
                 <span>
                   ${this.isOutgoing(transaction) ? 'To ' : 'From '}
-                  @${this.getCounterparty(transaction).username} on
-                  ${dateString(transaction.timestamp)}
+                  @${this.getCounterparty(transaction)} on
+                  ${dateString(transaction.content.timestamp)}
                 </span>
                 <span slot="secondary"
-                  >${this.getCounterparty(transaction).id}
+                  >${this.getCounterparty(transaction)}
                 </span>
                 <mwc-icon
                   slot="graphic"
@@ -101,7 +98,8 @@ export abstract class LlmPubTransactionList extends LitElement {
               </mwc-list-item>
 
               <span style="font-size: 20px; margin-right: 24px;">
-                ${this.isOutgoing(transaction) ? '-' : '+'}${transaction.amount}
+                ${this.isOutgoing(transaction) ? '-' : '+'}${transaction.content
+                  .amount}
                 credits
               </span>
             </div>
@@ -112,5 +110,14 @@ export abstract class LlmPubTransactionList extends LitElement {
         )}
       </mwc-list>
     `;
+  }
+
+  static get scopedElements() {
+    return {
+      'mwc-circular-progress': CircularProgress,
+      'mwc-icon': Icon,
+      'mwc-list-item': ListItem,
+      'mwc-list': List,
+    };
   }
 }

@@ -1,19 +1,16 @@
-import { LitElement, html, property, css } from 'lit-element';
-import { ApolloClient } from '@apollo/client/core';
+import { LitElement, html, property, css, PropertyValues } from 'lit-element';
 
-import '@material/mwc-list';
-import '@material/mwc-circular-progress';
-import { Agent } from 'holochain-profiles-username';
+import { List } from 'scoped-material-components/mwc-list';
+import { ListItem } from 'scoped-material-components/mwc-list-item';
+import { CircularProgress } from 'scoped-material-components/mwc-circular-progress';
 
-import { GET_MY_PENDING_OFFERS } from '../graphql/queries';
 import { Offer } from '../types';
 import { sharedStyles } from '../sharedStyles';
+import { BaseElement } from './base-element';
+import { Hashed } from '@holochain-open-dev/common';
 
-export abstract class LlmPubPendingOfferList extends LitElement {
+export class LlmPubPendingOfferList extends BaseElement {
   /** Public attributes */
-
-  /** Dependencies */
-  abstract _apolloClient: ApolloClient<any>;
 
   /** Private properties */
 
@@ -21,10 +18,10 @@ export abstract class LlmPubPendingOfferList extends LitElement {
   _myAgentId!: string;
 
   @property({ type: Object })
-  _offers!: Offer[];
+  _offers!: Array<Hashed<Offer>>;
 
   @property({ type: String })
-  _lastSelectedOfferId: string | undefined = undefined;
+  _lastSelectedOfferHash: string | undefined = undefined;
 
   static styles = [
     sharedStyles,
@@ -35,19 +32,16 @@ export abstract class LlmPubPendingOfferList extends LitElement {
     `,
   ];
 
-  async firstUpdated() {
-    this._apolloClient
-      .watchQuery({
-        query: GET_MY_PENDING_OFFERS,
-        fetchPolicy: 'network-only',
-      })
-      .subscribe(result => {
-        this._myAgentId = result.data.me.id;
-        this._offers = result.data.me.offers.filter(
-          (offer: Offer) =>
-            offer.state !== 'Completed' && offer.state !== 'Canceled'
-        );
-      });
+  async loadOffers() {
+    this._offers = await this._transactorService.queryMyPendingOffers();
+    this._myAgentId = await this._transactorService.getMyPublicKey();
+  }
+
+  async updated(changedValues: PropertyValues) {
+    super.updated(changedValues);
+    if (changedValues.has('membraneContext') && this.membraneContext) {
+      this.loadOffers();
+    }
   }
 
   renderPlaceholder(type: string) {
@@ -62,28 +56,28 @@ export abstract class LlmPubPendingOfferList extends LitElement {
         detail: { offerId, composed: true, bubbles: true },
       })
     );
-    this._lastSelectedOfferId = offerId;
+    this._lastSelectedOfferHash = offerId;
   }
 
-  isOutgoing(offer: Offer): boolean {
-    return offer.spender.id === this._myAgentId;
+  isOutgoing(offer: Hashed<Offer>): boolean {
+    return offer.content.spender_pub_key === this._myAgentId;
   }
 
-  getOutgoing(): Offer[] {
+  getOutgoing(): Array<Hashed<Offer>> {
     return this._offers.filter(offer => this.isOutgoing(offer));
   }
 
-  getIncoming(): Offer[] {
+  getIncoming(): Array<Hashed<Offer>> {
     return this._offers.filter(offer => !this.isOutgoing(offer));
   }
 
-  counterparty(offer: Offer): Agent {
-    return offer.recipient.id === this._myAgentId
-      ? offer.spender
-      : offer.recipient;
+  counterparty(offer: Hashed<Offer>): string {
+    return offer.content.recipient_pub_key === this._myAgentId
+      ? offer.content.spender_pub_key
+      : offer.content.recipient_pub_key;
   }
 
-  renderOfferList(title: string, offers: Offer[]) {
+  renderOfferList(title: string, offers: Array<Hashed<Offer>>) {
     return html`<div class="column">
       <span class="title">${title} offers</span>
 
@@ -94,17 +88,17 @@ export abstract class LlmPubPendingOfferList extends LitElement {
               ${offers.map(
                 (offer, index) => html`
                   <mwc-list-item
-                    @click=${() => this.offerSelected(offer.id)}
+                    @click=${() => this.offerSelected(offer.hash)}
                     graphic="avatar"
                     twoline
-                    .activated=${this._lastSelectedOfferId
-                      ? this._lastSelectedOfferId === offer.id
+                    .activated=${this._lastSelectedOfferHash
+                      ? this._lastSelectedOfferHash === offer.hash
                       : false}
                   >
                     <span>
-                      ${offer.amount} credits
+                      ${offer.content.amount} credits
                       ${this.isOutgoing(offer) ? 'to' : 'from'}
-                      @${this.counterparty(offer).username}
+                      ${this.counterparty(offer)}
                     </span>
 
                     <mwc-icon
@@ -142,5 +136,13 @@ export abstract class LlmPubPendingOfferList extends LitElement {
       </div>
       ${this.renderOfferList('Outgoing', this.getOutgoing())}
     </div>`;
+  }
+
+  static get scopedElements() {
+    return {
+      'mwc-circular-progress': CircularProgress,
+      'mwc-list': List,
+      'mwc-list-item': ListItem,
+    };
   }
 }

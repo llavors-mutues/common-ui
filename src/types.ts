@@ -13,8 +13,6 @@ export type OfferState =
   | 'Approved';
 
 export interface Offer {
-  id: string;
-
   spender_pub_key: string;
   recipient_pub_key: string;
   amount: number;

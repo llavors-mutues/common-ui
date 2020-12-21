@@ -1,45 +1,27 @@
-import { LitElement, html, property, css, PropertyValues } from 'lit-element';
+import { html, property, PropertyValues } from 'lit-element';
+import { Button } from 'scoped-material-components/mwc-button';
+import { CircularProgress } from 'scoped-material-components/mwc-circular-progress';
 import { sharedStyles } from '../sharedStyles';
-import { ApolloClient } from '@apollo/client/core';
-import {
-  GET_OFFER_DETAIL,
-  ACCEPT_OFFER,
-  CANCEL_OFFER,
-  GET_MY_PENDING_OFFERS,
-  REJECT_OFFER,
-} from '../graphql/queries';
-import { AgentWithBalance, OfferDetail } from '../types';
+import { Offer } from '../types';
+import { BaseElement } from './base-element';
 
-/**
- * General flow for the component
- *
- * From the point of view of the spender:
- * Pending --Recipient has accepted--> Completed
- *
- * From the point of view of the recipient:
- * Pending --Accept--> Completed
- * Pending --Reject--> Reject
- */
-export abstract class LlmPubOfferDetail extends LitElement {
+export class LlmPubOfferDetail extends BaseElement {
   /** Public attributes */
 
   /**
    * The offer to show the details of
    * This argument is mandatory, either in property or in attribute form
    */
-  @property({ type: String, attribute: 'offer-id' })
-  offerId!: string;
-
-  /** Dependencies */
-  abstract _apolloClient: ApolloClient<any>;
+  @property({ type: String, attribute: 'offer-hash' })
+  offerHash!: string;
 
   /** Private properties */
 
   @property({ type: String })
-  _myAgentId!: string;
+  _myAgentPubKey!: string;
 
   @property({ type: Object })
-  _offer!: OfferDetail;
+  _offer!: Offer | undefined;
 
   @property({ type: Boolean })
   _accepting = false;
@@ -55,7 +37,10 @@ export abstract class LlmPubOfferDetail extends LitElement {
   updated(changedValues: PropertyValues) {
     super.updated(changedValues);
 
-    if (changedValues.has('offerId') && this.offerId !== null) {
+    if (
+      (changedValues.has('membraneContext') && this.membraneContext) ||
+      (changedValues.has('offerHash') && this.offerHash)
+    ) {
       this.loadOffer();
     }
   }
@@ -63,126 +48,22 @@ export abstract class LlmPubOfferDetail extends LitElement {
   /** Actions */
 
   async loadOffer() {
-    const loadingTransactionId = this.offerId;
     this._offer = undefined as any;
 
-    const result = await this._apolloClient.query({
-      query: GET_OFFER_DETAIL,
-      variables: {
-        offerId: this.offerId,
-      },
-      fetchPolicy: 'network-only',
-    });
-
-    if (loadingTransactionId === this.offerId) {
-      this._offer = result.data.offer;
-      this._myAgentId = result.data.me.id;
-    }
+    this._myAgentPubKey = await this._transactorService.getMyPublicKey();
+    this._offer = await this._transactorService.queryOffer(this.offerHash);
   }
 
-  acceptOffer() {
-    const offerId = this.offerId;
-
+  async acceptOffer() {
     this._accepting = true;
 
-    this._apolloClient
-      .mutate({
-        mutation: ACCEPT_OFFER,
-        variables: {
-          offerId,
-        },
-        update: (cache, result) => {
-          const pendingOffers: any = cache.readQuery({
-            query: GET_MY_PENDING_OFFERS,
-          });
-
-          pendingOffers.myPendingOffers.find(
-            (o: OfferDetail) => o.id === offerId
-          ).state = 'Completed';
-
-          cache.writeQuery({
-            query: GET_MY_PENDING_OFFERS,
-            data: pendingOffers,
-          });
-        },
-      })
-      .then(() => {
-        this.dispatchEvent(
-          new CustomEvent('offer-completed', {
-            detail: { offerId },
-            composed: true,
-            bubbles: true,
-          })
-        );
-      })
-      .catch(() => {
-        this.dispatchEvent(
-          new CustomEvent('offer-failed-to-complete', {
-            detail: { offerId },
-            composed: true,
-            bubbles: true,
-          })
-        );
-        this.loadOffer();
-      })
-      .finally(() => (this._accepting = false));
-  }
-
-  rejectOffer() {
-    this._rejecting = true;
-    const offerId = this.offerId;
-
-    this._apolloClient
-      .mutate({
-        mutation: REJECT_OFFER,
-        variables: {
-          offerId,
-        },
-      })
-      .then(() => {
-        this.dispatchEvent(
-          new CustomEvent('offer-rejected', {
-            detail: { offerId },
-            composed: true,
-            bubbles: true,
-          })
-        );
-        this.loadOffer();
-      })
-      .finally(() => (this._rejecting = false));
-  }
-
-  async cancelOffer() {
-    const offerId = this.offerId;
-    (this._canceling = true),
-      await this._apolloClient.mutate({
-        mutation: CANCEL_OFFER,
-        variables: {
-          offerId,
-        },
-        update: (cache, result) => {
-          const pendingOffers: any = cache.readQuery({
-            query: GET_MY_PENDING_OFFERS,
-          });
-
-          const offers = pendingOffers.myPendingOffers.filter(
-            (o: OfferDetail) => o.id !== offerId
-          );
-
-          pendingOffers.myPendingOffers = offers;
-
-          cache.writeQuery({
-            query: GET_MY_PENDING_OFFERS,
-            data: pendingOffers,
-          });
-        },
-      });
+    await this._transactorService.acceptOffer(this.offerHash);
 
     this.dispatchEvent(
-      new CustomEvent('offer-canceled', {
-        detail: { offerId },
-        bubbles: true,
+      new CustomEvent('offer-completed', {
+        detail: { offerHash: this.offerHash },
         composed: true,
+        bubbles: true,
       })
     );
   }
@@ -202,42 +83,30 @@ export abstract class LlmPubOfferDetail extends LitElement {
       <div class="column">
         ${this.renderCounterparty()}
         <div class="row center-content" style="margin-top: 24px;">
-          <mwc-button
-            .label=${(this.isOutgoing() ? 'CANCEL' : 'REJECT') + ' OFFER'}
-            style="flex: 1; margin-right: 16px;"
-            @click=${() =>
-              this.isOutgoing() ? this.cancelOffer() : this.rejectOffer()}
-          ></mwc-button>
-          ${this.renderOfferForwardAction()}
+          ${this.renderAcceptOffer()}
         </div>
       </div>
     `;
   }
 
   renderCounterparty() {
-    const counterparty = this.getCounterparty();
     return html`
       <div class="row">
         <div class="column">
           <span class="item title">
             Offer ${this.isOutgoing() ? ' to ' : ' from '}
-            ${this.getCounterpartyUsername()}
+            ${this._offer?.recipient_pub_key}
           </span>
-          <span class="item">Offer state: ${this._offer.state}</span>
-          <span class="item">Agend ID: ${counterparty.id}</span>
+          <span class="item">Offer state: Pending</span>
+          <span class="item">Agend ID: ${this._offer?.recipient_pub_key}</span>
 
           <span class="item">
-            Transaction amount: ${this._offer.amount} credits
+            Transaction amount: ${this._offer?.amount} credits
           </span>
 
           <span class="item title" style="margin-top: 16px;"
-            >${this.getCounterpartyUsername()} current status</span
+            >${this._offer?.recipient_pub_key} current status</span
           >
-          <span class="item">
-            Balance:
-            ${counterparty.balance > 0 ? '+' : ''}${counterparty.balance}
-            credits
-          </span>
         </div>
       </div>
     `;
@@ -250,10 +119,10 @@ export abstract class LlmPubOfferDetail extends LitElement {
     return 'Loading offer...';
   }
 
-  renderOfferForwardAction() {
-    if (this.isOutgoing() || this._offer.state !== 'Pending') {
+  renderAcceptOffer() {
+    if (this.isOutgoing()) {
       const buttonLabel =
-        this._offer.state === 'Pending'
+        this._offer?.state === 'Pending'
           ? 'Awaiting for approval'
           : 'Offer is no longer pending';
 
@@ -268,7 +137,7 @@ export abstract class LlmPubOfferDetail extends LitElement {
       return html`
         <mwc-button
           style="flex: 1;"
-          label="ACCEPT AND COMPLETE TRANSACTION"
+          label="ACCEPT OFFER"
           raised
           @click=${() => this.acceptOffer()}
         ></mwc-button>
@@ -279,16 +148,13 @@ export abstract class LlmPubOfferDetail extends LitElement {
   /** Helpers */
 
   isOutgoing() {
-    return this._offer.spender.id === this._myAgentId;
+    return this._offer?.spender_pub_key === this._myAgentPubKey;
   }
 
-  getCounterparty(): AgentWithBalance {
-    return this._offer.recipient.id === this._myAgentId
-      ? this._offer.spender
-      : this._offer.recipient;
-  }
-
-  getCounterpartyUsername(): string {
-    return `@${this.getCounterparty().username}`;
+  static get scopedElements() {
+    return {
+      'mwc-button': Button,
+      'mwc-circular-progress': CircularProgress,
+    };
   }
 }
