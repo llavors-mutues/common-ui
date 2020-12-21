@@ -8,6 +8,7 @@ import { Offer } from '../types';
 import { sharedStyles } from '../sharedStyles';
 import { BaseElement } from './base-element';
 import { Hashed } from '@holochain-open-dev/common';
+import { Icon } from 'scoped-material-components/mwc-icon';
 
 export class LlmPubPendingOfferList extends BaseElement {
   /** Public attributes */
@@ -39,7 +40,7 @@ export class LlmPubPendingOfferList extends BaseElement {
 
   async updated(changedValues: PropertyValues) {
     super.updated(changedValues);
-    if (changedValues.has('membraneContext') && this.membraneContext) {
+    if (changedValues.has('membraneContext') && this.membraneContext.appWebsocket) {
       this.loadOffers();
     }
   }
@@ -143,6 +144,7 @@ export class LlmPubPendingOfferList extends BaseElement {
       'mwc-circular-progress': CircularProgress,
       'mwc-list': List,
       'mwc-list-item': ListItem,
+      'mwc-icon': Icon,
     };
   }
 }

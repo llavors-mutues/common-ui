@@ -5,30 +5,75 @@
     <style>
       body {
         background: #fafafa;
+        font-family: Arial, Helvetica, sans-serif;
       }
     </style>
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto:300,400,500"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Material+Icons&display=block"
+      rel="stylesheet"
+    />
   </head>
   <body>
-    <hpu-username-prompt>
-      <div style="display: flex; flex-direction: column">
-        <llm-pub-agent-list style="flex: 1"></llm-pub-agent-list>
-        <llm-pub-transaction-list style="flex: 1"></llm-pub-transaction-list>
-      </div>
-    </hpu-username-prompt>
+    <membrane-context-provider id="provider">
+      <hod-profile-prompt>
+        <div style="display: flex; flex-direction: column">
+          <llm-pub-create-offer style="flex: 1"></llm-pub-create-offer>
+          <llm-pub-pending-offer-list
+            style="flex: 1"
+          ></llm-pub-pending-offer-list>
+          <llm-pub-transaction-list style="flex: 1"></llm-pub-transaction-list>
+        </div>
+      </hod-profile-prompt>
+    </membrane-context-provider>
 
     <script type="module">
       import { html, render } from 'lit-html';
-      import { ProfilesUsernameModule } from 'holochain-profiles-username';
-      import { PublicTransactionsMutualCreditModule } from '../dist';
-      import { setupApolloClient } from '../test/mocks/setupApolloClient';
+      import {
+        LlmPubCreateOffer,
+        LlmPubPendingOfferList,
+        LlmPubTransactionList,
+      } from '../dist';
+      import {
+        HodProfilePrompt,
+        HodSearchAgent,
+      } from '@holochain-open-dev/profiles';
+      import { MembraneContextProvider } from '@holochain-open-dev/membrane-context';
+      import ConductorApi from '@holochain/conductor-api';
 
-      setupApolloClient().then(({ client }) => {
-        const deps = {
-          apolloClient: client,
-        };
-        new ProfilesUsernameModule(deps).install();
-        new PublicTransactionsMutualCreditModule(deps).install();
-      });
+      (async function () {
+        const appWebsocket = await ConductorApi.AppWebsocket.connect(
+          'ws://localhost:8888'
+        );
+        const appInfo = await appWebsocket.appInfo({
+          installed_app_id: 'test-app',
+        });
+
+        const cellId = appInfo.cell_data[0][0];
+
+        customElements.define(
+          'membrane-context-provider',
+          MembraneContextProvider
+        );
+        customElements.define('hod-profile-prompt', HodProfilePrompt);
+        customElements.define('hod-search-agent', HodSearchAgent);
+        customElements.define('llm-pub-create-offer', LlmPubCreateOffer);
+        customElements.define(
+          'llm-pub-pending-offer-list',
+          LlmPubPendingOfferList
+        );
+        customElements.define(
+          'llm-pub-transaction-list',
+          LlmPubTransactionList
+        );
+
+        const context = document.getElementById('provider');
+        context.appWebsocket = appWebsocket;
+        context.cellId = cellId;
+      })();
     </script>
   </body>
 </html>

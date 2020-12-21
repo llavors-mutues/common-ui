@@ -38,7 +38,7 @@ export class LlmPubOfferDetail extends BaseElement {
     super.updated(changedValues);
 
     if (
-      (changedValues.has('membraneContext') && this.membraneContext) ||
+      (changedValues.has('membraneContext') && this.membraneContext.appWebsocket) ||
       (changedValues.has('offerHash') && this.offerHash)
     ) {
       this.loadOffer();

@@ -1,31 +1,24 @@
-import { LitElement, html, property, query } from 'lit-element';
+import { html, property, query } from 'lit-element';
 
 import { TextField } from 'scoped-material-components/mwc-textfield';
 import { Button } from 'scoped-material-components/mwc-button';
+import { Dialog } from 'scoped-material-components/mwc-dialog';
+import { AgentProfile, HodSearchAgent } from '@holochain-open-dev/profiles';
 
 import { sharedStyles } from '../sharedStyles';
 import { BaseElement } from './base-element';
 
 export class LlmPubCreateOffer extends BaseElement {
-  /** Public attributes */
-
-  /**
-   * Whether the dialog is open or not
-   */
-  @property({ type: Boolean })
-  open = false;
-
-  // The recipient agent of the offer. If not given, will enable the recipient field of the form
-  @property({ type: String })
-  recipientPubKey: string | undefined = undefined;
-
   /** Private properties */
 
   @query('#amount')
   _amountField!: TextField;
 
-  @query('#creditor')
-  _recipientField!: TextField;
+  @query('#dialog')
+  _dialog!: Dialog;
+
+  @property({ type: Object })
+  _recipientAgentProfile: AgentProfile | undefined = undefined;
 
   static styles = sharedStyles;
 
@@ -46,9 +39,10 @@ export class LlmPubCreateOffer extends BaseElement {
   }
 
   async createOffer() {
-    const recipientPubKey = this._recipientField.value;
+    const recipientPubKey = this._recipientAgentProfile
+      ?.agent_pub_key as string;
     const amount = parseFloat(this._amountField.value);
-    
+
     await this._transactorService.createOffer(recipientPubKey, amount);
 
     this.dispatchEvent(
@@ -60,41 +54,16 @@ export class LlmPubCreateOffer extends BaseElement {
     );
   }
 
-  render() {
+  renderConfirmDialog() {
     return html`
-      <mwc-dialog
-        .open=${this.open}
-        @closed=${() => (this.open = false)}
-        heading="Create New Offer"
-      >
-        <div class="column center-content">
-          <span>
-            You are about to create an offer
-            ${this.recipientPubKey ? `to @${this.recipientPubKey}` : ''}, which
-            would lower your balance by the amount of the transaction and raise
-            the creditor's value by the same amount.
-          </span>
-          <mwc-textfield
-            .disabled=${this.recipientPubKey !== undefined}
-            .value=${this.recipientPubKey ? this.recipientPubKey : ''}
-            style="padding: 16px 0; width: 24em;"
-            id="creditor"
-            label="Creditor"
-            autoValidate
-            outlined
-          ></mwc-textfield>
-
-          <mwc-textfield
-            style="padding-top: 16px;"
-            label="Amount"
-            type="number"
-            id="amount"
-            min="0.1"
-            step="0.1"
-            autoValidate
-            outlined
-          ></mwc-textfield>
-        </div>
+      <mwc-dialog heading="Confirm offer" id="dialog">
+        <span>
+          You are about to create an offer to
+          ${this._recipientAgentProfile?.profile.nickname}, with public key
+          ${this._recipientAgentProfile?.agent_pub_key}. This would lower your
+          balance by the amount of the transaction and raise the recipient's
+          value by the same amount.
+        </span>
 
         <mwc-button slot="secondaryAction" dialogAction="cancel">
           Cancel
@@ -105,9 +74,43 @@ export class LlmPubCreateOffer extends BaseElement {
           @click=${() => this.createOffer()}
           dialogAction="create"
         >
-          Create Offer
+          Confirm
         </mwc-button>
       </mwc-dialog>
+    `;
+  }
+
+  onAgentSelected(e: CustomEvent) {
+    this._recipientAgentProfile = e.detail.agent;
+  }
+
+  render() {
+    return html`
+      ${this.renderConfirmDialog()}
+      <div class="column">
+        <span class="title" style="margin-bottom: 8px;">Create New Offer</span>
+        <hod-search-agent
+          field-label="Recipient"
+          @agent-selected=${(e: CustomEvent) => this.onAgentSelected(e)}
+        ></hod-search-agent>
+
+        <mwc-textfield
+          style="padding-top: 16px;"
+          label="Amount"
+          type="number"
+          id="amount"
+          min="0.1"
+          step="0.1"
+          autoValidate
+          outlined
+        ></mwc-textfield>
+
+        <mwc-button
+          label="CREATE OFFER"
+          .disabled=${!(this._recipientAgentProfile && this._amountField.value)}
+          @click=${() => this._dialog.show()}
+        ></mwc-button>
+      </div>
     `;
   }
 
@@ -115,6 +118,8 @@ export class LlmPubCreateOffer extends BaseElement {
     return {
       'mwc-textfield': TextField,
       'mwc-button': Button,
+      'mwc-dialog': Dialog,
+      'hod-search-agent': HodSearchAgent,
     };
   }
 }

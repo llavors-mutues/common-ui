@@ -12,6 +12,7 @@ export class PublicTransactorService {
   async getMyPublicKey(): Promise<string> {
     return this.callZome('who_am_i', null);
   }
+  
   async getAgentBalance(agentPubKey: string): Promise<number> {
     return this.callZome('get_balance_for_agent', agentPubKey);
   }
@@ -20,10 +21,10 @@ export class PublicTransactorService {
     agentPubKey: string
   ): Promise<Array<Hashed<Transaction>>> {
     const transactions = await this.callZome(
-      'get_balance_for_agent',
+      'get_transactions_for_agent',
       agentPubKey
     );
-    return transactions.map(t => ({
+    return transactions.map((t: any) => ({
       hash: t.hash,
       content: {
         ...t.content,

@@ -1,4 +1,4 @@
-import { LitElement, property, html } from 'lit-element';
+import { LitElement, property, html, PropertyValues } from 'lit-element';
 import { Hashed } from '@holochain-open-dev/common';
 
 import { List } from 'scoped-material-components/mwc-list';
@@ -24,6 +24,13 @@ export abstract class LlmPubTransactionList extends BaseElement {
 
   static styles = sharedStyles;
 
+  async updated(changedValues: PropertyValues) {
+    super.updated(changedValues);
+    if (changedValues.has('membraneContext') && this.membraneContext.appWebsocket) {
+      this.loadTransactions();
+    }
+  }
+  
   async loadTransactions() {
     this._myAgentPubKey = await this._transactorService.getMyPublicKey();
     this._transactions = await this._transactorService.getAgentTransactions(
