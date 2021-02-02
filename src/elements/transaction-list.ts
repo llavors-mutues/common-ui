@@ -5,49 +5,37 @@ import { List } from 'scoped-material-components/mwc-list';
 import { CircularProgress } from 'scoped-material-components/mwc-circular-progress';
 
 import type { Transaction } from '../types';
-import { sharedStyles } from '../sharedStyles';
+import { sharedStyles } from './utils/sharedStyles';
 import { dateString } from '../utils';
-import { BaseElement } from './base-element';
+import { BaseElement } from './utils/base-element';
 import { Icon } from 'scoped-material-components/mwc-icon';
 import { ListItem } from 'scoped-material-components/mwc-list-item';
 
-export abstract class LlmPubTransactionList extends BaseElement {
+export abstract class TransactionList extends BaseElement {
   /** Public attributes */
 
   /** Private properties */
 
-  @property({ type: String })
-  _myAgentPubKey!: string;
-
-  @property({ type: Object, attribute: false })
-  _transactions!: Array<Hashed<Transaction>>;
+  @property({ type: Boolean })
+  _loading = true;
 
   static styles = sharedStyles;
 
-  async updated(changedValues: PropertyValues) {
-    super.updated(changedValues);
-    if (changedValues.has('membraneContext') && this.membraneContext.appWebsocket) {
-      this.loadTransactions();
-    }
-  }
-  
-  async loadTransactions() {
-    this._myAgentPubKey = await this._transactorService.getMyPublicKey();
-    this._transactions = await this._transactorService.getAgentTransactions(
-      this._myAgentPubKey
-    );
-
-    this._transactions = this._transactions.sort(
-      (t1, t2) => t2.content.timestamp - t1.content.timestamp
-    );
+  async firstUpdated() {
+    await this.transactorStore.fetchMyTransactions();
+    this._loading = false;
   }
 
   isOutgoing(transaction: Hashed<Transaction>) {
-    return transaction.content.spender_pub_key === this._myAgentPubKey;
+    return (
+      transaction.content.spender_pub_key ===
+      this.transactorStore._myAgentPubKey
+    );
   }
 
   getCounterparty(transaction: Hashed<Transaction>): string {
-    return transaction.content.recipient_pub_key === this._myAgentPubKey
+    return transaction.content.recipient_pub_key ===
+      this.transactorStore._myAgentPubKey
       ? transaction.content.spender_pub_key
       : transaction.content.recipient_pub_key;
   }
@@ -59,24 +47,26 @@ export abstract class LlmPubTransactionList extends BaseElement {
   }
 
   renderContent() {
-    if (!this._transactions)
+    if (this._loading)
       return html`
         <div class="padding center-content column">
-          <mwc-circular-progress></mwc-circular-progress>
+          <mwc-circular-progress indeterminate></mwc-circular-progress>
           <span class="placeholder" style="margin-top: 18px;"
             >Fetching transaction history...</span
           >
         </div>
       `;
 
-    if (this._transactions.length === 0)
+    const myTransactions = this.transactorStore.myTransactions;
+
+    if (myTransactions.length === 0)
       return html`<div class="padding">
         <span>You have no transactions in your history</span>
       </div>`;
 
     return html`
       <mwc-list style="width: 100%;">
-        ${this._transactions.map(
+        ${myTransactions.map(
           (transaction, i) => html`
             <div class="row" style="align-items: center;">
               <mwc-list-item
@@ -110,7 +100,7 @@ export abstract class LlmPubTransactionList extends BaseElement {
                 credits
               </span>
             </div>
-            ${i < this._transactions.length - 1
+            ${i < myTransactions.length - 1
               ? html`<li divider padded role="separator"></li> `
               : html``}
           `
@@ -119,7 +109,7 @@ export abstract class LlmPubTransactionList extends BaseElement {
     `;
   }
 
-  static get scopedElements() {
+  getScopedElements() {
     return {
       'mwc-circular-progress': CircularProgress,
       'mwc-icon': Icon,

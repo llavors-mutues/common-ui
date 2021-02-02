@@ -1,28 +1,25 @@
-import { LitElement, html, property, css, PropertyValues } from 'lit-element';
+import { html, property, css } from 'lit-element';
 
 import { List } from 'scoped-material-components/mwc-list';
 import { ListItem } from 'scoped-material-components/mwc-list-item';
 import { CircularProgress } from 'scoped-material-components/mwc-circular-progress';
 
 import { Offer } from '../types';
-import { sharedStyles } from '../sharedStyles';
-import { BaseElement } from './base-element';
+import { sharedStyles } from './utils/sharedStyles';
+import { BaseElement } from './utils/base-element';
 import { Hashed } from '@holochain-open-dev/common';
 import { Icon } from 'scoped-material-components/mwc-icon';
 
-export class LlmPubPendingOfferList extends BaseElement {
+export abstract class PendingOfferList extends BaseElement {
   /** Public attributes */
 
   /** Private properties */
 
   @property({ type: String })
-  _myAgentId!: string;
-
-  @property({ type: Object })
-  _offers!: Array<Hashed<Offer>>;
+  _lastSelectedOfferHash: string | undefined = undefined;
 
   @property({ type: String })
-  _lastSelectedOfferHash: string | undefined = undefined;
+  _loading = true;
 
   static styles = [
     sharedStyles,
@@ -33,16 +30,9 @@ export class LlmPubPendingOfferList extends BaseElement {
     `,
   ];
 
-  async loadOffers() {
-    this._offers = await this._transactorService.queryMyPendingOffers();
-    this._myAgentId = await this._transactorService.getMyPublicKey();
-  }
-
-  async updated(changedValues: PropertyValues) {
-    super.updated(changedValues);
-    if (changedValues.has('membraneContext') && this.membraneContext.appWebsocket) {
-      this.loadOffers();
-    }
+  async firstUpdated() {
+    await this.transactorStore.fetchMyPendingOffers();
+    this._loading = false;
   }
 
   renderPlaceholder(type: string) {
@@ -51,29 +41,18 @@ export class LlmPubPendingOfferList extends BaseElement {
     </span>`;
   }
 
-  offerSelected(offerId: string) {
+  offerSelected(offerHash: string) {
     this.dispatchEvent(
       new CustomEvent('offer-selected', {
-        detail: { offerId, composed: true, bubbles: true },
+        detail: { offerHash, composed: true, bubbles: true },
       })
     );
-    this._lastSelectedOfferHash = offerId;
-  }
-
-  isOutgoing(offer: Hashed<Offer>): boolean {
-    return offer.content.spender_pub_key === this._myAgentId;
-  }
-
-  getOutgoing(): Array<Hashed<Offer>> {
-    return this._offers.filter(offer => this.isOutgoing(offer));
-  }
-
-  getIncoming(): Array<Hashed<Offer>> {
-    return this._offers.filter(offer => !this.isOutgoing(offer));
+    this._lastSelectedOfferHash = offerHash;
   }
 
   counterparty(offer: Hashed<Offer>): string {
-    return offer.content.recipient_pub_key === this._myAgentId
+    return offer.content.recipient_pub_key ===
+      this.transactorStore._myAgentPubKey
       ? offer.content.spender_pub_key
       : offer.content.recipient_pub_key;
   }
@@ -91,23 +70,26 @@ export class LlmPubPendingOfferList extends BaseElement {
                   <mwc-list-item
                     @click=${() => this.offerSelected(offer.hash)}
                     graphic="avatar"
-                    twoline
                     .activated=${this._lastSelectedOfferHash
                       ? this._lastSelectedOfferHash === offer.hash
                       : false}
                   >
                     <span>
                       ${offer.content.amount} credits
-                      ${this.isOutgoing(offer) ? 'to' : 'from'}
+                      ${this.transactorStore.isOutgoing(offer.content)
+                        ? 'to'
+                        : 'from'}
                       ${this.counterparty(offer)}
                     </span>
 
                     <mwc-icon
                       slot="graphic"
-                      .style="color: ${this.isOutgoing(offer)
+                      .style="color: ${this.transactorStore.isOutgoing(
+                        offer.content
+                      )
                         ? 'red'
                         : 'green'}"
-                      >${this.isOutgoing(offer)
+                      >${this.transactorStore.isOutgoing(offer.content)
                         ? 'call_made'
                         : 'call_received'}</mwc-icon
                     >
@@ -123,9 +105,9 @@ export class LlmPubPendingOfferList extends BaseElement {
   }
 
   render() {
-    if (!this._offers)
+    if (this._loading)
       return html`<div class="column fill center-content">
-        <mwc-circular-progress></mwc-circular-progress>
+        <mwc-circular-progress indeterminate></mwc-circular-progress>
         <span class="placeholder" style="margin-top: 18px;"
           >Fetching pending offers...</span
         >
@@ -133,13 +115,13 @@ export class LlmPubPendingOfferList extends BaseElement {
 
     return html`<div class="column fill">
       <div style="margin-bottom: 24px;">
-        ${this.renderOfferList('Incoming', this.getIncoming())}
+        ${this.renderOfferList('Incoming', this.transactorStore.incomingOffers)}
       </div>
-      ${this.renderOfferList('Outgoing', this.getOutgoing())}
+      ${this.renderOfferList('Outgoing', this.transactorStore.outgoingOffers)}
     </div>`;
   }
 
-  static get scopedElements() {
+  getScopedElements() {
     return {
       'mwc-circular-progress': CircularProgress,
       'mwc-list': List,

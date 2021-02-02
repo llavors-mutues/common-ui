@@ -21,11 +21,9 @@
     <membrane-context-provider id="provider">
       <hod-profile-prompt>
         <div style="display: flex; flex-direction: column">
-          <llm-pub-create-offer style="flex: 1"></llm-pub-create-offer>
-          <llm-pub-pending-offer-list
-            style="flex: 1"
-          ></llm-pub-pending-offer-list>
-          <llm-pub-transaction-list style="flex: 1"></llm-pub-transaction-list>
+          <create-offer style="flex: 1"></create-offer>
+          <my-offers style="flex: 1"></my-offers>
+          <transaction-list style="flex: 1"></transaction-list>
         </div>
       </hod-profile-prompt>
     </membrane-context-provider>
@@ -33,9 +31,13 @@
     <script type="module">
       import { html, render } from 'lit-html';
       import {
-        LlmPubCreateOffer,
-        LlmPubPendingOfferList,
-        LlmPubTransactionList,
+        CreateOffer,
+        MyOffers,
+        PendingOfferList,
+        TransactionList,
+        connect,
+        PublicTransactorService,
+        TransactorStore,
       } from '../dist';
       import {
         HodProfilePrompt,
@@ -46,7 +48,7 @@
 
       (async function () {
         const appWebsocket = await ConductorApi.AppWebsocket.connect(
-          'ws://localhost:8888'
+          process.env.CONDUCTOR_URL
         );
         const appInfo = await appWebsocket.appInfo({
           installed_app_id: 'test-app',
@@ -54,20 +56,20 @@
 
         const cellId = appInfo.cell_data[0][0];
 
+        const service = new PublicTransactorService(appWebsocket, cellId);
+        const store = new TransactorStore(service);
+
         customElements.define(
           'membrane-context-provider',
           MembraneContextProvider
         );
         customElements.define('hod-profile-prompt', HodProfilePrompt);
         customElements.define('hod-search-agent', HodSearchAgent);
-        customElements.define('llm-pub-create-offer', LlmPubCreateOffer);
+        customElements.define('create-offer', connect(CreateOffer, store));
+        customElements.define('my-offers', connect(MyOffers, store));
         customElements.define(
-          'llm-pub-pending-offer-list',
-          LlmPubPendingOfferList
-        );
-        customElements.define(
-          'llm-pub-transaction-list',
-          LlmPubTransactionList
+          'transaction-list',
+          connect(TransactionList, store)
         );
 
         const context = document.getElementById('provider');

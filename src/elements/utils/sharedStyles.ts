@@ -12,7 +12,7 @@ export const sharedStyles = css`
   }
 
   .placeholder {
-    opacity: 0.7;
+    opacity: 0.5;
   }
 
   .fill {
@@ -22,6 +22,7 @@ export const sharedStyles = css`
   .center-content {
     justify-content: center;
     align-items: center;
+    display: flex;
   }
 
   .item {

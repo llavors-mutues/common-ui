@@ -1,11 +1,11 @@
-import { html, property, PropertyValues } from 'lit-element';
+import { css, html, property } from 'lit-element';
 import { Button } from 'scoped-material-components/mwc-button';
 import { CircularProgress } from 'scoped-material-components/mwc-circular-progress';
-import { sharedStyles } from '../sharedStyles';
+import { sharedStyles } from './utils/sharedStyles';
 import { Offer } from '../types';
-import { BaseElement } from './base-element';
+import { BaseElement } from './utils/base-element';
 
-export class LlmPubOfferDetail extends BaseElement {
+export abstract class OfferDetail extends BaseElement {
   /** Public attributes */
 
   /**
@@ -17,11 +17,8 @@ export class LlmPubOfferDetail extends BaseElement {
 
   /** Private properties */
 
-  @property({ type: String })
-  _myAgentPubKey!: string;
-
-  @property({ type: Object })
-  _offer!: Offer | undefined;
+  @property({ type: Boolean })
+  _loading = true;
 
   @property({ type: Boolean })
   _accepting = false;
@@ -32,32 +29,26 @@ export class LlmPubOfferDetail extends BaseElement {
   @property({ type: Boolean })
   _canceling = false;
 
-  static styles = sharedStyles;
-
-  updated(changedValues: PropertyValues) {
-    super.updated(changedValues);
-
-    if (
-      (changedValues.has('membraneContext') && this.membraneContext.appWebsocket) ||
-      (changedValues.has('offerHash') && this.offerHash)
-    ) {
-      this.loadOffer();
-    }
-  }
+  static styles = [
+    sharedStyles,
+    css`
+      :host {
+        display: flex;
+      }
+    `,
+  ];
 
   /** Actions */
 
-  async loadOffer() {
-    this._offer = undefined as any;
-
-    this._myAgentPubKey = await this._transactorService.getMyPublicKey();
-    this._offer = await this._transactorService.queryOffer(this.offerHash);
+  async firstUpdated() {
+    await this.transactorStore.fetchMyPendingOffers();
+    this._loading = false;
   }
 
   async acceptOffer() {
     this._accepting = true;
 
-    await this._transactorService.acceptOffer(this.offerHash);
+    await this.transactorStore.acceptOffer(this.offerHash);
 
     this.dispatchEvent(
       new CustomEvent('offer-completed', {
@@ -68,12 +59,16 @@ export class LlmPubOfferDetail extends BaseElement {
     );
   }
 
+  get offer(): Offer {
+    return this.transactorStore.offer(this.offerHash);
+  }
+
   /** Renders */
 
   render() {
-    if (!this._offer || this._accepting || this._canceling || this._rejecting)
+    if (this._loading || this._accepting || this._canceling || this._rejecting)
       return html`<div class="column fill center-content">
-        <mwc-circular-progress></mwc-circular-progress>
+        <mwc-circular-progress indeterminate></mwc-circular-progress>
         <span style="margin-top: 18px;" class="placeholder"
           >${this.placeholderMessage()}</span
         >
@@ -94,19 +89,15 @@ export class LlmPubOfferDetail extends BaseElement {
       <div class="row">
         <div class="column">
           <span class="item title">
-            Offer ${this.isOutgoing() ? ' to ' : ' from '}
-            ${this._offer?.recipient_pub_key}
+            Offer
+            ${this.transactorStore.isOutgoing(this.offer) ? ' to ' : ' from '}
+            ${this.offer.recipient_pub_key}
           </span>
-          <span class="item">Offer state: Pending</span>
-          <span class="item">Agend ID: ${this._offer?.recipient_pub_key}</span>
+          <span class="item">Agend ID: ${this.offer.recipient_pub_key}</span>
 
           <span class="item">
-            Transaction amount: ${this._offer?.amount} credits
+            Transaction amount: ${this.offer.amount} credits
           </span>
-
-          <span class="item title" style="margin-top: 16px;"
-            >${this._offer?.recipient_pub_key} current status</span
-          >
         </div>
       </div>
     `;
@@ -120,9 +111,9 @@ export class LlmPubOfferDetail extends BaseElement {
   }
 
   renderAcceptOffer() {
-    if (this.isOutgoing()) {
+    if (this.transactorStore.isOutgoing(this.offer)) {
       const buttonLabel =
-        this._offer?.state === 'Pending'
+        this.offer.state === 'Pending'
           ? 'Awaiting for approval'
           : 'Offer is no longer pending';
 
@@ -145,13 +136,7 @@ export class LlmPubOfferDetail extends BaseElement {
     }
   }
 
-  /** Helpers */
-
-  isOutgoing() {
-    return this._offer?.spender_pub_key === this._myAgentPubKey;
-  }
-
-  static get scopedElements() {
+  getScopedElements() {
     return {
       'mwc-button': Button,
       'mwc-circular-progress': CircularProgress,

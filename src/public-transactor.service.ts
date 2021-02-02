@@ -12,7 +12,7 @@ export class PublicTransactorService {
   async getMyPublicKey(): Promise<string> {
     return this.callZome('who_am_i', null);
   }
-  
+
   async getAgentBalance(agentPubKey: string): Promise<number> {
     return this.callZome('get_balance_for_agent', agentPubKey);
   }
@@ -36,9 +36,6 @@ export class PublicTransactorService {
   async queryMyPendingOffers(): Promise<Array<Hashed<Offer>>> {
     return this.callZome('query_my_pending_offers', null);
   }
-  async queryOffer(offerHash: string): Promise<Offer | undefined> {
-    return this.callZome('query_offer', offerHash);
-  }
 
   async createOffer(recipientPubKey: string, amount: number): Promise<string> {
     return this.callZome('create_offer', {
@@ -48,9 +45,7 @@ export class PublicTransactorService {
   }
 
   async acceptOffer(offerHash: string): Promise<string> {
-    return this.callZome('accept_offer', {
-      offer_hash: offerHash,
-    });
+    return this.callZome('accept_offer', offerHash);
   }
   /* 
   async cancelOffer(offerHash: string) {

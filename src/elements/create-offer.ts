@@ -5,10 +5,11 @@ import { Button } from 'scoped-material-components/mwc-button';
 import { Dialog } from 'scoped-material-components/mwc-dialog';
 import { AgentProfile, HodSearchAgent } from '@holochain-open-dev/profiles';
 
-import { sharedStyles } from '../sharedStyles';
-import { BaseElement } from './base-element';
+import { sharedStyles } from './utils/sharedStyles';
+import { BaseElement } from './utils/base-element';
+import { Card } from 'scoped-material-components/mwc-card';
 
-export class LlmPubCreateOffer extends BaseElement {
+export abstract class CreateOffer extends BaseElement {
   /** Private properties */
 
   @query('#amount')
@@ -43,7 +44,7 @@ export class LlmPubCreateOffer extends BaseElement {
       ?.agent_pub_key as string;
     const amount = parseFloat(this._amountField.value);
 
-    await this._transactorService.createOffer(recipientPubKey, amount);
+    await this.transactorStore.createOffer(recipientPubKey, amount);
 
     this.dispatchEvent(
       new CustomEvent('offer-created', {
@@ -87,36 +88,43 @@ export class LlmPubCreateOffer extends BaseElement {
   render() {
     return html`
       ${this.renderConfirmDialog()}
-      <div class="column">
-        <span class="title" style="margin-bottom: 8px;">Create New Offer</span>
-        <hod-search-agent
-          field-label="Recipient"
-          @agent-selected=${(e: CustomEvent) => this.onAgentSelected(e)}
-        ></hod-search-agent>
+      <mwc-card style="width: auto; flex: 1;">
+        <div class="column" style="margin: 16px;">
+          <span class="title" style="margin-bottom: 8px;"
+            >Create New Offer</span
+          >
+          <hod-search-agent
+            field-label="Recipient"
+            @agent-selected=${(e: CustomEvent) => this.onAgentSelected(e)}
+          ></hod-search-agent>
 
-        <mwc-textfield
-          style="padding-top: 16px;"
-          label="Amount"
-          type="number"
-          id="amount"
-          min="0.1"
-          step="0.1"
-          autoValidate
-          outlined
-        ></mwc-textfield>
+          <mwc-textfield
+            style="padding-top: 16px;"
+            label="Amount"
+            type="number"
+            id="amount"
+            min="0.1"
+            step="0.1"
+            autoValidate
+            outlined
+          ></mwc-textfield>
 
-        <mwc-button
-          label="CREATE OFFER"
-          .disabled=${!(this._recipientAgentProfile && this._amountField.value)}
-          @click=${() => this._dialog.show()}
-        ></mwc-button>
-      </div>
+          <mwc-button
+            label="CREATE OFFER"
+            .disabled=${!(
+              this._recipientAgentProfile && this._amountField.value
+            )}
+            @click=${() => this._dialog.show()}
+          ></mwc-button>
+        </div>
+      </mwc-card>
     `;
   }
 
-  static get scopedElements() {
+  getScopedElements() {
     return {
       'mwc-textfield': TextField,
+      'mwc-card': Card,
       'mwc-button': Button,
       'mwc-dialog': Dialog,
       'hod-search-agent': HodSearchAgent,

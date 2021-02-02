@@ -21,5 +21,7 @@ module.exports = {
     'import/no-unresolved': 'off',
     'import/extensions': 'off',
     'no-empty': 'off',
+    '@typescript-eslint/ban-ts-ignore': 'off',
+    'no-undef': 'off',
   },
 };
