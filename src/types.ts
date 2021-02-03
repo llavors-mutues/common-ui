@@ -3,6 +3,7 @@ export interface Transaction {
   recipient_pub_key: string;
   amount: number;
   timestamp: number;
+  offer_hash: string;
 }
 
 export type OfferState =

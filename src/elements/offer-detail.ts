@@ -47,9 +47,9 @@ export abstract class OfferDetail extends BaseElement {
 
   async acceptOffer() {
     this._accepting = true;
-
+    
     await this.transactorStore.acceptOffer(this.offerHash);
-
+    
     this.dispatchEvent(
       new CustomEvent('offer-completed', {
         detail: { offerHash: this.offerHash },
@@ -57,6 +57,7 @@ export abstract class OfferDetail extends BaseElement {
         bubbles: true,
       })
     );
+    this._accepting = false;
   }
 
   get offer(): Offer {
@@ -112,14 +113,9 @@ export abstract class OfferDetail extends BaseElement {
 
   renderAcceptOffer() {
     if (this.transactorStore.isOutgoing(this.offer)) {
-      const buttonLabel =
-        this.offer.state === 'Pending'
-          ? 'Awaiting for approval'
-          : 'Offer is no longer pending';
-
       return html`<mwc-button
         style="flex: 1;"
-        .label=${buttonLabel}
+        label="Awaiting for approval"
         disabled
         raised
       >

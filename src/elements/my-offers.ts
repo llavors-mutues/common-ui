@@ -18,12 +18,15 @@ export abstract class MyOffers extends BaseElement {
             style="flex: 1; margin: 16px;"
             @offer-selected=${(e: CustomEvent) =>
               (this._offerHash = e.detail.offerHash)}
+            }
           ></pending-offer-list>
           <span class="vertical-divider"></span>
           ${this._offerHash
             ? html`
                 <offer-detail
                   style="flex: 1; margin: 16px;"
+                  @offer-completed=${(e: CustomEvent) =>
+                    (this._offerHash = undefined)}
                   .offerHash=${this._offerHash}
                 ></offer-detail>
               `

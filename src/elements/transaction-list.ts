@@ -26,13 +26,6 @@ export abstract class TransactionList extends BaseElement {
     this._loading = false;
   }
 
-  isOutgoing(transaction: Hashed<Transaction>) {
-    return (
-      transaction.content.spender_pub_key ===
-      this.transactorStore._myAgentPubKey
-    );
-  }
-
   getCounterparty(transaction: Hashed<Transaction>): string {
     return transaction.content.recipient_pub_key ===
       this.transactorStore._myAgentPubKey
@@ -76,7 +69,11 @@ export abstract class TransactionList extends BaseElement {
                 style="flex: 1;"
               >
                 <span>
-                  ${this.isOutgoing(transaction) ? 'To ' : 'From '}
+                  ${this.transactorStore.isOutgoingTransaction(
+                    transaction.content
+                  )
+                    ? 'To '
+                    : 'From '}
                   @${this.getCounterparty(transaction)} on
                   ${dateString(transaction.content.timestamp)}
                 </span>
@@ -85,18 +82,25 @@ export abstract class TransactionList extends BaseElement {
                 </span>
                 <mwc-icon
                   slot="graphic"
-                  .style="color: ${this.isOutgoing(transaction)
+                  .style="color: ${this.transactorStore.isOutgoingTransaction(
+                    transaction.content
+                  )
                     ? 'red'
                     : 'green'}"
-                  >${this.isOutgoing(transaction)
+                  >${this.transactorStore.isOutgoingTransaction(
+                    transaction.content
+                  )
                     ? 'call_made'
                     : 'call_received'}</mwc-icon
                 >
               </mwc-list-item>
 
               <span style="font-size: 20px; margin-right: 24px;">
-                ${this.isOutgoing(transaction) ? '-' : '+'}${transaction.content
-                  .amount}
+                ${this.transactorStore.isOutgoingTransaction(
+                  transaction.content
+                )
+                  ? '-'
+                  : '+'}${transaction.content.amount}
                 credits
               </span>
             </div>

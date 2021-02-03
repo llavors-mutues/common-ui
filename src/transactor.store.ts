@@ -1,6 +1,13 @@
 import { Hashed } from '@holochain-open-dev/common';
 import { Dictionary } from '@holochain-open-dev/common/core-types';
-import { observable, action, flow, runInAction, computed } from 'mobx';
+import {
+  observable,
+  action,
+  runInAction,
+  computed,
+  autorun,
+  makeObservable,
+} from 'mobx';
 import { PublicTransactorService } from './public-transactor.service';
 import { Offer, Transaction } from './types';
 
@@ -12,14 +19,21 @@ export class TransactorStore {
   @observable
   public _myAgentPubKey: string | undefined = undefined;
 
-  constructor(protected transactorService: PublicTransactorService) {}
+  constructor(protected transactorService: PublicTransactorService) {
+    makeObservable(this);
+  }
 
   @computed
   get myPendingOffers(): Hashed<Offer>[] {
-    return Object.entries(this.offers).map(([hash, offer]) => ({
-      hash,
-      content: offer,
-    }));
+    return Object.entries(this.offers)
+      .filter(
+        ([hash, offer]) =>
+          !Object.values(this.transactions).find(t => t.offer_hash == hash)
+      )
+      .map(([hash, offer]) => ({
+        hash,
+        content: offer,
+      }));
   }
 
   @computed
@@ -35,14 +49,16 @@ export class TransactorStore {
       }));
   }
 
-  @computed
   isOutgoing(offer: Offer): boolean {
     return offer.spender_pub_key === this._myAgentPubKey;
   }
 
-  @computed
   offer(offerHash: string): Offer {
     return this.offers[offerHash];
+  }
+
+  isOutgoingTransaction(transaction: Transaction) {
+    return transaction.spender_pub_key === this._myAgentPubKey;
   }
 
   @computed
@@ -54,6 +70,15 @@ export class TransactorStore {
   get incomingOffers(): Array<Hashed<Offer>> {
     return this.myPendingOffers.filter(
       offer => !this.isOutgoing(offer.content)
+    );
+  }
+
+  @computed
+  get myBalance(): number {
+    return Object.values(this.transactions).reduce(
+      (acc, next) =>
+        acc + (this.isOutgoingTransaction(next) ? -next.amount : next.amount),
+      0
     );
   }
 
@@ -75,17 +100,22 @@ export class TransactorStore {
       await this.fetchMyAgentPubKey()
     );
 
-    for (const transaction of transactions) {
-      this.transactions[transaction.hash] = transaction.content;
-    }
+    runInAction(() => {
+      for (const transaction of transactions) {
+        this.transactions[transaction.hash] = transaction.content;
+      }
+    });
   }
 
   @action
   public async fetchMyAgentPubKey() {
     if (this._myAgentPubKey) return this._myAgentPubKey;
     else {
-      this._myAgentPubKey = await this.transactorService.getMyPublicKey();
-      return this._myAgentPubKey;
+      const agentPubKey = await this.transactorService.getMyPublicKey();
+      runInAction(() => {
+        this._myAgentPubKey = agentPubKey;
+      });
+      return agentPubKey;
     }
   }
 
@@ -104,7 +134,6 @@ export class TransactorStore {
     await this.transactorService.acceptOffer(offerHash);
 
     runInAction(() => {
-      delete this.offers[offerHash];
       this.fetchMyTransactions();
     });
   }

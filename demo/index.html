@@ -23,7 +23,7 @@
         <div style="display: flex; flex-direction: column">
           <create-offer style="flex: 1"></create-offer>
           <my-offers style="flex: 1"></my-offers>
-          <transaction-list style="flex: 1"></transaction-list>
+          <my-balance style="flex: 1"></my-balance>
         </div>
       </hod-profile-prompt>
     </membrane-context-provider>
@@ -34,7 +34,7 @@
         CreateOffer,
         MyOffers,
         PendingOfferList,
-        TransactionList,
+        MyBalance,
         connect,
         PublicTransactorService,
         TransactorStore,
@@ -67,14 +67,12 @@
         customElements.define('hod-search-agent', HodSearchAgent);
         customElements.define('create-offer', connect(CreateOffer, store));
         customElements.define('my-offers', connect(MyOffers, store));
-        customElements.define(
-          'transaction-list',
-          connect(TransactionList, store)
-        );
+        customElements.define('my-balance', connect(MyBalance, store));
 
         const context = document.getElementById('provider');
         context.appWebsocket = appWebsocket;
         context.cellId = cellId;
+
       })();
     </script>
   </body>
