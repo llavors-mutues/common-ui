@@ -1,4 +1,4 @@
-import { Hashed } from '@holochain-open-dev/common';
+import { Hashed, serializeHash } from '@holochain-open-dev/common';
 import { Dictionary } from '@holochain-open-dev/common/core-types';
 import {
   observable,
@@ -16,11 +16,13 @@ export class TransactorStore {
   public offers: Dictionary<Offer> = {};
   @observable
   public transactions: Dictionary<Transaction> = {};
-  @observable
-  public _myAgentPubKey: string | undefined = undefined;
 
   constructor(protected transactorService: PublicTransactorService) {
     makeObservable(this);
+  }
+
+  get myAgentPubKey() {
+    return serializeHash(this.transactorService.cellId[1]);
   }
 
   @computed
@@ -50,7 +52,7 @@ export class TransactorStore {
   }
 
   isOutgoing(offer: Offer): boolean {
-    return offer.spender_pub_key === this._myAgentPubKey;
+    return offer.spender_pub_key === this.myAgentPubKey;
   }
 
   offer(offerHash: string): Offer {
@@ -58,7 +60,7 @@ export class TransactorStore {
   }
 
   isOutgoingTransaction(transaction: Transaction) {
-    return transaction.spender_pub_key === this._myAgentPubKey;
+    return transaction.spender_pub_key === this.myAgentPubKey;
   }
 
   @computed
@@ -84,7 +86,6 @@ export class TransactorStore {
 
   @action
   public async fetchMyPendingOffers() {
-    await this.fetchMyAgentPubKey();
     const offers = await this.transactorService.queryMyPendingOffers();
 
     runInAction(() => {
@@ -97,7 +98,7 @@ export class TransactorStore {
   @action
   public async fetchMyTransactions() {
     const transactions = await this.transactorService.getAgentTransactions(
-      await this.fetchMyAgentPubKey()
+      this.myAgentPubKey
     );
 
     runInAction(() => {
@@ -105,18 +106,6 @@ export class TransactorStore {
         this.transactions[transaction.hash] = transaction.content;
       }
     });
-  }
-
-  @action
-  public async fetchMyAgentPubKey() {
-    if (this._myAgentPubKey) return this._myAgentPubKey;
-    else {
-      const agentPubKey = await this.transactorService.getMyPublicKey();
-      runInAction(() => {
-        this._myAgentPubKey = agentPubKey;
-      });
-      return agentPubKey;
-    }
   }
 
   @action

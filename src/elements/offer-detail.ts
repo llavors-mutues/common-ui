@@ -1,7 +1,7 @@
 import { css, html, property } from 'lit-element';
 import { Button } from 'scoped-material-components/mwc-button';
 import { CircularProgress } from 'scoped-material-components/mwc-circular-progress';
-import { sharedStyles } from './utils/sharedStyles';
+import { sharedStyles } from './utils/shared-styles';
 import { Offer } from '../types';
 import { BaseElement } from './utils/base-element';
 

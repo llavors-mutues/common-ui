@@ -5,7 +5,7 @@ import { List } from 'scoped-material-components/mwc-list';
 import { CircularProgress } from 'scoped-material-components/mwc-circular-progress';
 
 import type { Transaction } from '../types';
-import { sharedStyles } from './utils/sharedStyles';
+import { sharedStyles } from './utils/shared-styles';
 import { dateString } from '../utils';
 import { BaseElement } from './utils/base-element';
 import { Icon } from 'scoped-material-components/mwc-icon';

@@ -4,7 +4,7 @@ import { Card } from 'scoped-material-components/mwc-card';
 import { PendingOfferList } from './pending-offer-list';
 import { css, property } from 'lit-element';
 import { OfferDetail } from './offer-detail';
-import { sharedStyles } from './utils/sharedStyles';
+import { sharedStyles } from './utils/shared-styles';
 
 export abstract class MyOffers extends BaseElement {
   @property({ type: String, attribute: false })

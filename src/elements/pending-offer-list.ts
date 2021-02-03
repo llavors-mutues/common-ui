@@ -5,7 +5,7 @@ import { ListItem } from 'scoped-material-components/mwc-list-item';
 import { CircularProgress } from 'scoped-material-components/mwc-circular-progress';
 
 import { Offer } from '../types';
-import { sharedStyles } from './utils/sharedStyles';
+import { sharedStyles } from './utils/shared-styles';
 import { BaseElement } from './utils/base-element';
 import { Hashed } from '@holochain-open-dev/common';
 import { Icon } from 'scoped-material-components/mwc-icon';

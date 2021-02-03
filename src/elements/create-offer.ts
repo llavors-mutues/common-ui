@@ -5,7 +5,7 @@ import { Button } from 'scoped-material-components/mwc-button';
 import { Dialog } from 'scoped-material-components/mwc-dialog';
 import { AgentProfile, HodSearchAgent } from '@holochain-open-dev/profiles';
 
-import { sharedStyles } from './utils/sharedStyles';
+import { sharedStyles } from './utils/shared-styles';
 import { BaseElement } from './utils/base-element';
 import { Card } from 'scoped-material-components/mwc-card';
 
