@@ -1,5 +1,5 @@
 import { html } from 'lit-html';
-import { BaseElement, connect } from './utils/base-element';
+import { BaseElement, connectTransactor } from './utils/base-element';
 import { Card } from 'scoped-material-components/mwc-card';
 import { PendingOfferList } from './pending-offer-list';
 import { css, property } from 'lit-element';
@@ -48,7 +48,8 @@ export abstract class MyOffers extends BaseElement {
           width: 1px;
           opacity: 0.5;
           background-color: black;
-          height: 100%;
+          opacity: 0.1;
+          margin: 16px 0;
         }
       `,
     ];
@@ -57,8 +58,8 @@ export abstract class MyOffers extends BaseElement {
   getScopedElements() {
     return {
       'mwc-card': Card,
-      'pending-offer-list': connect(PendingOfferList, this.transactorStore),
-      'offer-detail': connect(OfferDetail, this.transactorStore),
+      'pending-offer-list': connectTransactor(PendingOfferList, this.transactorStore),
+      'offer-detail': connectTransactor(OfferDetail, this.transactorStore),
     };
   }
 }

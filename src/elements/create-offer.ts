@@ -3,11 +3,12 @@ import { html, property, query } from 'lit-element';
 import { TextField } from 'scoped-material-components/mwc-textfield';
 import { Button } from 'scoped-material-components/mwc-button';
 import { Dialog } from 'scoped-material-components/mwc-dialog';
-import { AgentProfile, HodSearchAgent } from '@holochain-open-dev/profiles';
+import { AgentProfile, SearchAgent } from '@holochain-open-dev/profiles';
 
 import { sharedStyles } from './utils/shared-styles';
 import { BaseElement } from './utils/base-element';
 import { Card } from 'scoped-material-components/mwc-card';
+import { connectProfiles } from '@holochain-open-dev/profiles/elements/utils/base-element';
 
 export abstract class CreateOffer extends BaseElement {
   /** Private properties */
@@ -93,13 +94,13 @@ export abstract class CreateOffer extends BaseElement {
           <span class="title" style="margin-bottom: 8px;"
             >Create New Offer</span
           >
-          <hod-search-agent
+          <search-agent
             field-label="Recipient"
             @agent-selected=${(e: CustomEvent) => this.onAgentSelected(e)}
-          ></hod-search-agent>
+          ></search-agent>
 
           <mwc-textfield
-            style="padding-top: 16px;"
+            style="padding-top: 16px; margin-bottom: 16px;"
             label="Amount"
             type="number"
             id="amount"
@@ -127,7 +128,10 @@ export abstract class CreateOffer extends BaseElement {
       'mwc-card': Card,
       'mwc-button': Button,
       'mwc-dialog': Dialog,
-      'hod-search-agent': HodSearchAgent,
+      'search-agent': connectProfiles(
+        SearchAgent,
+        this.transactorStore.profilesStore
+      ),
     };
   }
 }

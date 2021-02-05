@@ -21,7 +21,7 @@ export abstract class BaseElement extends MobxReactionUpdate(
   }
 }
 
-export function connect<T extends typeof BaseElement>(
+export function connectTransactor<T extends typeof BaseElement>(
   baseClass: T,
   store: TransactorStore
 ): Constructor<HTMLElement> {

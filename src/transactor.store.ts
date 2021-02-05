@@ -1,15 +1,15 @@
 import { Hashed, serializeHash } from '@holochain-open-dev/common';
 import { Dictionary } from '@holochain-open-dev/common/core-types';
+import { ProfilesStore } from '@holochain-open-dev/profiles/profiles.store';
 import {
   observable,
   action,
   runInAction,
   computed,
-  autorun,
   makeObservable,
 } from 'mobx';
 import { PublicTransactorService } from './public-transactor.service';
-import { Offer, Transaction } from './types';
+import { Multiparty, Offer, Transaction } from './types';
 
 export class TransactorStore {
   @observable
@@ -17,7 +17,10 @@ export class TransactorStore {
   @observable
   public transactions: Dictionary<Transaction> = {};
 
-  constructor(protected transactorService: PublicTransactorService) {
+  constructor(
+    protected transactorService: PublicTransactorService,
+    public profilesStore: ProfilesStore
+  ) {
     makeObservable(this);
   }
 
@@ -51,16 +54,24 @@ export class TransactorStore {
       }));
   }
 
-  isOutgoing(offer: Offer): boolean {
-    return offer.spender_pub_key === this.myAgentPubKey;
+  isOutgoing(multiparty: Multiparty): boolean {
+    return multiparty.spender_pub_key === this.myAgentPubKey;
   }
 
   offer(offerHash: string): Offer {
     return this.offers[offerHash];
   }
 
-  isOutgoingTransaction(transaction: Transaction) {
-    return transaction.spender_pub_key === this.myAgentPubKey;
+  counterpartyKey(multiparty: Multiparty): string {
+    return multiparty.recipient_pub_key === this.myAgentPubKey
+      ? multiparty.spender_pub_key
+      : multiparty.recipient_pub_key;
+  }
+
+  counterpartyNickname(multiparty: Multiparty): string {
+    const counterpartyKey = this.counterpartyKey(multiparty);
+
+    return this.profilesStore.profileOf(counterpartyKey).nickname;
   }
 
   @computed
@@ -78,8 +89,7 @@ export class TransactorStore {
   @computed
   get myBalance(): number {
     return Object.values(this.transactions).reduce(
-      (acc, next) =>
-        acc + (this.isOutgoingTransaction(next) ? -next.amount : next.amount),
+      (acc, next) => acc + (this.isOutgoing(next) ? -next.amount : next.amount),
       0
     );
   }
@@ -87,6 +97,11 @@ export class TransactorStore {
   @action
   public async fetchMyPendingOffers() {
     const offers = await this.transactorService.queryMyPendingOffers();
+
+    const promises = offers.map(o =>
+      this.profilesStore.fetchAgentProfile(this.counterpartyKey(o.content))
+    );
+    await Promise.all(promises);
 
     runInAction(() => {
       for (const offer of offers) {
@@ -100,6 +115,11 @@ export class TransactorStore {
     const transactions = await this.transactorService.getAgentTransactions(
       this.myAgentPubKey
     );
+
+    const promises = transactions.map(t =>
+      this.profilesStore.fetchAgentProfile(this.counterpartyKey(t.content))
+    );
+    await Promise.all(promises);
 
     runInAction(() => {
       for (const transaction of transactions) {

@@ -36,9 +36,13 @@ export abstract class PendingOfferList extends BaseElement {
   }
 
   renderPlaceholder(type: string) {
-    return html`<span style="padding-top: 16px;">
-      You have no ${type.toLowerCase()} offers
-    </span>`;
+    return html`
+      <div class="column center-content" style="flex: 1">
+        <span style="padding: 24px; padding-top: 34px;" class="placeholder">
+          You have no ${type.toLowerCase()} offers
+        </span>
+      </div>
+    `;
   }
 
   offerSelected(offerHash: string) {
@@ -48,13 +52,6 @@ export abstract class PendingOfferList extends BaseElement {
       })
     );
     this._lastSelectedOfferHash = offerHash;
-  }
-
-  counterparty(offer: Hashed<Offer>): string {
-    return offer.content.recipient_pub_key ===
-      this.transactorStore._myAgentPubKey
-      ? offer.content.spender_pub_key
-      : offer.content.recipient_pub_key;
   }
 
   renderOfferList(title: string, offers: Array<Hashed<Offer>>) {
@@ -79,7 +76,9 @@ export abstract class PendingOfferList extends BaseElement {
                       ${this.transactorStore.isOutgoing(offer.content)
                         ? 'to'
                         : 'from'}
-                      ${this.counterparty(offer)}
+                      ${this.transactorStore.counterpartyNickname(
+                        offer.content
+                      )}
                     </span>
 
                     <mwc-icon

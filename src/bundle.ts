@@ -7,8 +7,10 @@ import { Constructor } from 'lit-element';
 import { createUniqueTag } from '@open-wc/scoped-elements/src/createUniqueTag';
 import { TransactorStore } from './transactor.store';
 import { PublicTransactorService } from './public-transactor.service';
-import { connect } from './elements/utils/base-element';
+import { connectTransactor } from './elements/utils/base-element';
 import { MyOffers } from './elements/my-offers';
+import { ProfilesService } from '@holochain-open-dev/profiles';
+import { ProfilesStore } from '@holochain-open-dev/profiles/profiles.store';
 
 function renderUnique(
   tag: string,
@@ -35,15 +37,18 @@ export default function lenses(
   appWebsocket: AppWebsocket,
   cellId: CellId
 ): Lenses {
+  const profilesService = new ProfilesService(appWebsocket, cellId);
+  const profilesStore = new ProfilesStore(profilesService);
+
   const service = new PublicTransactorService(appWebsocket, cellId);
-  const store = new TransactorStore(service);
+  const store = new TransactorStore(service, profilesStore);
 
   return {
     standalone: [
       {
         name: 'My Offers',
         render(root: ShadowRoot) {
-          renderUnique('my-offers', connect(MyOffers, store), root);
+          renderUnique('my-offers', connectTransactor(MyOffers, store), root);
         },
       },
       {
@@ -51,7 +56,7 @@ export default function lenses(
         render(root: ShadowRoot) {
           renderUnique(
             'my-transaction-history',
-            connect(TransactionList, store),
+            connectTransactor(TransactionList, store),
             root
           );
         },
@@ -59,7 +64,11 @@ export default function lenses(
       {
         name: 'Create Offer',
         render(root: ShadowRoot) {
-          renderUnique('create-offer', connect(CreateOffer, store), root);
+          renderUnique(
+            'create-offer',
+            connectTransactor(CreateOffer, store),
+            root
+          );
         },
       },
     ],

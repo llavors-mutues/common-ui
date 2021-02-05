@@ -12,7 +12,8 @@ export const sharedStyles = css`
   }
 
   .placeholder {
-    opacity: 0.5;
+    opacity: 0.7;
+    text-align: center;
   }
 
   .fill {
@@ -34,7 +35,6 @@ export const sharedStyles = css`
   }
 
   .title {
-    font-weight: bold;
-    font-size: 18px;
+    font-size: 20px;
   }
 `;

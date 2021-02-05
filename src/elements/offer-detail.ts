@@ -47,9 +47,9 @@ export abstract class OfferDetail extends BaseElement {
 
   async acceptOffer() {
     this._accepting = true;
-    
+
     await this.transactorStore.acceptOffer(this.offerHash);
-    
+
     this.dispatchEvent(
       new CustomEvent('offer-completed', {
         detail: { offerHash: this.offerHash },
@@ -78,21 +78,19 @@ export abstract class OfferDetail extends BaseElement {
     return html`
       <div class="column">
         ${this.renderCounterparty()}
-        <div class="row center-content" style="margin-top: 24px;">
-          ${this.renderAcceptOffer()}
-        </div>
+        <div class="row center-content">${this.renderAcceptOffer()}</div>
       </div>
     `;
   }
 
   renderCounterparty() {
     return html`
-      <div class="row">
+      <div class="row" style="flex: 1;">
         <div class="column">
           <span class="item title">
             Offer
             ${this.transactorStore.isOutgoing(this.offer) ? ' to ' : ' from '}
-            ${this.offer.recipient_pub_key}
+            ${this.transactorStore.counterpartyNickname(this.offer)}
           </span>
           <span class="item">Agend ID: ${this.offer.recipient_pub_key}</span>
 

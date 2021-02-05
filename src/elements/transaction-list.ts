@@ -26,13 +26,6 @@ export abstract class TransactionList extends BaseElement {
     this._loading = false;
   }
 
-  getCounterparty(transaction: Hashed<Transaction>): string {
-    return transaction.content.recipient_pub_key ===
-      this.transactorStore._myAgentPubKey
-      ? transaction.content.spender_pub_key
-      : transaction.content.recipient_pub_key;
-  }
-
   render() {
     return html`<div class="column center-content">
       ${this.renderContent()}
@@ -54,7 +47,7 @@ export abstract class TransactionList extends BaseElement {
 
     if (myTransactions.length === 0)
       return html`<div class="padding">
-        <span>You have no transactions in your history</span>
+        <span class="placeholder">You have no transactions in your history</span>
       </div>`;
 
     return html`
@@ -69,36 +62,32 @@ export abstract class TransactionList extends BaseElement {
                 style="flex: 1;"
               >
                 <span>
-                  ${this.transactorStore.isOutgoingTransaction(
-                    transaction.content
-                  )
+                  ${this.transactorStore.isOutgoing(transaction.content)
                     ? 'To '
                     : 'From '}
-                  @${this.getCounterparty(transaction)} on
-                  ${dateString(transaction.content.timestamp)}
+                  ${this.transactorStore.counterpartyNickname(
+                    transaction.content
+                  )}
+                  on ${dateString(transaction.content.timestamp)}
                 </span>
                 <span slot="secondary"
-                  >${this.getCounterparty(transaction)}
+                  >${this.transactorStore.counterpartyKey(transaction.content)}
                 </span>
                 <mwc-icon
                   slot="graphic"
-                  .style="color: ${this.transactorStore.isOutgoingTransaction(
+                  .style="color: ${this.transactorStore.isOutgoing(
                     transaction.content
                   )
                     ? 'red'
                     : 'green'}"
-                  >${this.transactorStore.isOutgoingTransaction(
-                    transaction.content
-                  )
+                  >${this.transactorStore.isOutgoing(transaction.content)
                     ? 'call_made'
                     : 'call_received'}</mwc-icon
                 >
               </mwc-list-item>
 
-              <span style="font-size: 20px; margin-right: 24px;">
-                ${this.transactorStore.isOutgoingTransaction(
-                  transaction.content
-                )
+              <span style="font-size: 20px; margin: 0 24px;">
+                ${this.transactorStore.isOutgoing(transaction.content)
                   ? '-'
                   : '+'}${transaction.content.amount}
                 credits
