@@ -12,7 +12,7 @@ export const sharedStyles = css`
   }
 
   .placeholder {
-    opacity: 0.7;
+    opacity: 0.6;
     text-align: center;
   }
 
@@ -31,7 +31,7 @@ export const sharedStyles = css`
   }
 
   .padding {
-    padding: 16px;
+    padding: 24px;
   }
 
   .title {

@@ -38,7 +38,7 @@ export abstract class PendingOfferList extends BaseElement {
   renderPlaceholder(type: string) {
     return html`
       <div class="column center-content" style="flex: 1">
-        <span style="padding: 24px; padding-top: 34px;" class="placeholder">
+        <span style="padding-top: 34px;" class="placeholder padding">
           You have no ${type.toLowerCase()} offers
         </span>
       </div>

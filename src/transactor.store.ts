@@ -103,11 +103,7 @@ export class TransactorStore {
     );
     await Promise.all(promises);
 
-    runInAction(() => {
-      for (const offer of offers) {
-        this.offers[offer.hash] = offer.content;
-      }
-    });
+    offers.forEach(o => this.storeOffer(o));
   }
 
   @action
@@ -121,11 +117,7 @@ export class TransactorStore {
     );
     await Promise.all(promises);
 
-    runInAction(() => {
-      for (const transaction of transactions) {
-        this.transactions[transaction.hash] = transaction.content;
-      }
-    });
+    transactions.forEach(t => this.storeTransaction(t));
   }
 
   @action
@@ -145,5 +137,14 @@ export class TransactorStore {
     runInAction(() => {
       this.fetchMyTransactions();
     });
+  }
+
+  @action
+  public storeOffer(offer: Hashed<Offer>) {
+    this.offers[offer.hash] = offer.content;
+  }
+  @action
+  public storeTransaction(transaction: Hashed<Transaction>) {
+    this.transactions[transaction.hash] = transaction.content;
   }
 }

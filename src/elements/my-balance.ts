@@ -10,7 +10,7 @@ export abstract class MyBalance extends BaseElement {
     return html`
       <div class="column center-content" style="flex: 1;">
         <span style="font-size: 24px; margin: 16px;">
-          ${balance > 0 ? '+' : balance < 0 ? '-' : ''}${balance} credits
+          ${balance > 0 ? '+' : ''}${balance} credits
         </span>
         <mwc-card style="width: auto; flex: 1;">
           <transaction-list></transaction-list>

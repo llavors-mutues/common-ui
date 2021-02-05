@@ -43,6 +43,19 @@ export default function lenses(
   const service = new PublicTransactorService(appWebsocket, cellId);
   const store = new TransactorStore(service, profilesStore);
 
+  const signalReceiver = AppWebsocket.connect(
+    appWebsocket.client.socket.url,
+    12000,
+    signal => {
+      const payload = signal.data.payload;
+      if (payload.OfferReceived) {
+        store.storeOffer(payload.OfferReceived);
+      } else if (payload.OfferAccepted) {
+        store.storeTransaction(payload.OfferAccepted);
+      }
+    }
+  );
+
   return {
     standalone: [
       {

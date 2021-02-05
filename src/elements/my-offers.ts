@@ -49,7 +49,7 @@ export abstract class MyOffers extends BaseElement {
           opacity: 0.5;
           background-color: black;
           opacity: 0.1;
-          margin: 16px 0;
+          margin: 24px 0;
         }
       `,
     ];

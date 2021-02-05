@@ -19,7 +19,7 @@
   </head>
   <body>
     <profile-prompt>
-      <div style="display: flex; flex-direction: column; flex: 1;">
+      <div style="display: flex; flex-direction: column; flex: 1">
         <create-offer style="display: flex; flex: 1"></create-offer>
         <my-offers style="display: flex; flex: 1"></my-offers>
         <my-balance style="display: flex; flex: 1"></my-balance>
@@ -44,12 +44,21 @@
         ProfilesService,
       } from '@holochain-open-dev/profiles';
       import ConductorApi from '@holochain/conductor-api';
+      import { runInAction } from 'mobx';
 
       (async function () {
+        let store = undefined;
         const appWebsocket = await ConductorApi.AppWebsocket.connect(
           process.env.CONDUCTOR_URL,
           12000,
-          signal => {console.log(signal)}
+          signal => {
+            const payload = signal.data.payload;
+            if (payload.OfferReceived) {
+              store.storeOffer(payload.OfferReceived);
+            } else if (payload.OfferAccepted) {
+              store.storeTransaction(payload.OfferAccepted);
+            }
+          }
         );
         const appInfo = await appWebsocket.appInfo({
           installed_app_id: 'test-app',
@@ -60,15 +69,21 @@
         const profilesService = new ProfilesService(appWebsocket, cellId);
         const profilesStore = new ProfilesStore(profilesService);
         const service = new PublicTransactorService(appWebsocket, cellId);
-        const store = new TransactorStore(service, profilesStore);
+        store = new TransactorStore(service, profilesStore);
 
         customElements.define(
           'profile-prompt',
           connectProfiles(ProfilePrompt, profilesStore)
         );
-        customElements.define('create-offer', connectTransactor(CreateOffer, store));
+        customElements.define(
+          'create-offer',
+          connectTransactor(CreateOffer, store)
+        );
         customElements.define('my-offers', connectTransactor(MyOffers, store));
-        customElements.define('my-balance', connectTransactor(MyBalance, store));
+        customElements.define(
+          'my-balance',
+          connectTransactor(MyBalance, store)
+        );
       })();
     </script>
   </body>
