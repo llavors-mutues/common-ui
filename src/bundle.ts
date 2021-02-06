@@ -7,10 +7,11 @@ import { Constructor } from 'lit-element';
 import { createUniqueTag } from '@open-wc/scoped-elements/src/createUniqueTag';
 import { TransactorStore } from './transactor.store';
 import { PublicTransactorService } from './public-transactor.service';
-import { connectTransactor } from './elements/utils/base-element';
 import { MyOffers } from './elements/my-offers';
 import { ProfilesService } from '@holochain-open-dev/profiles';
 import { ProfilesStore } from '@holochain-open-dev/profiles/profiles.store';
+import { connectStore } from '@holochain-open-dev/common';
+import { MyBalance } from './elements/my-balance';
 
 function renderUnique(
   tag: string,
@@ -61,15 +62,15 @@ export default function lenses(
       {
         name: 'My Offers',
         render(root: ShadowRoot) {
-          renderUnique('my-offers', connectTransactor(MyOffers, store), root);
+          renderUnique('my-offers', connectStore(MyOffers, store), root);
         },
       },
       {
-        name: 'Transaction History',
+        name: 'My Balance',
         render(root: ShadowRoot) {
           renderUnique(
-            'my-transaction-history',
-            connectTransactor(TransactionList, store),
+            'my-balance',
+            connectStore(MyBalance, store),
             root
           );
         },
@@ -79,7 +80,7 @@ export default function lenses(
         render(root: ShadowRoot) {
           renderUnique(
             'create-offer',
-            connectTransactor(CreateOffer, store),
+            connectStore(CreateOffer, store),
             root
           );
         },

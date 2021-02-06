@@ -1,12 +1,13 @@
 import { html } from 'lit-html';
-import { BaseElement, connectTransactor } from './utils/base-element';
 import { Card } from 'scoped-material-components/mwc-card';
 import { PendingOfferList } from './pending-offer-list';
 import { css, property } from 'lit-element';
 import { OfferDetail } from './offer-detail';
 import { sharedStyles } from './utils/shared-styles';
+import { connectStore, StoreElement } from '@holochain-open-dev/common';
+import { TransactorStore } from '../transactor.store';
 
-export abstract class MyOffers extends BaseElement {
+export abstract class MyOffers extends StoreElement<TransactorStore> {
   @property({ type: String, attribute: false })
   _offerHash: string | undefined = undefined;
 
@@ -58,8 +59,8 @@ export abstract class MyOffers extends BaseElement {
   getScopedElements() {
     return {
       'mwc-card': Card,
-      'pending-offer-list': connectTransactor(PendingOfferList, this.transactorStore),
-      'offer-detail': connectTransactor(OfferDetail, this.transactorStore),
+      'pending-offer-list': connectStore(PendingOfferList, this.store),
+      'offer-detail': connectStore(OfferDetail, this.store),
     };
   }
 }

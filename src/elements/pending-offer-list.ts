@@ -6,11 +6,11 @@ import { CircularProgress } from 'scoped-material-components/mwc-circular-progre
 
 import { Offer } from '../types';
 import { sharedStyles } from './utils/shared-styles';
-import { BaseElement } from './utils/base-element';
-import { Hashed } from '@holochain-open-dev/common';
+import { Hashed, StoreElement } from '@holochain-open-dev/common';
 import { Icon } from 'scoped-material-components/mwc-icon';
+import { TransactorStore } from '../transactor.store';
 
-export abstract class PendingOfferList extends BaseElement {
+export abstract class PendingOfferList extends StoreElement<TransactorStore> {
   /** Public attributes */
 
   /** Private properties */
@@ -31,7 +31,7 @@ export abstract class PendingOfferList extends BaseElement {
   ];
 
   async firstUpdated() {
-    await this.transactorStore.fetchMyPendingOffers();
+    await this.store.fetchMyPendingOffers();
     this._loading = false;
   }
 
@@ -73,22 +73,16 @@ export abstract class PendingOfferList extends BaseElement {
                   >
                     <span>
                       ${offer.content.amount} credits
-                      ${this.transactorStore.isOutgoing(offer.content)
-                        ? 'to'
-                        : 'from'}
-                      ${this.transactorStore.counterpartyNickname(
-                        offer.content
-                      )}
+                      ${this.store.isOutgoing(offer.content) ? 'to' : 'from'}
+                      ${this.store.counterpartyNickname(offer.content)}
                     </span>
 
                     <mwc-icon
                       slot="graphic"
-                      .style="color: ${this.transactorStore.isOutgoing(
-                        offer.content
-                      )
+                      .style="color: ${this.store.isOutgoing(offer.content)
                         ? 'red'
                         : 'green'}"
-                      >${this.transactorStore.isOutgoing(offer.content)
+                      >${this.store.isOutgoing(offer.content)
                         ? 'call_made'
                         : 'call_received'}</mwc-icon
                     >
@@ -114,9 +108,9 @@ export abstract class PendingOfferList extends BaseElement {
 
     return html`<div class="column fill">
       <div style="margin-bottom: 24px;">
-        ${this.renderOfferList('Incoming', this.transactorStore.incomingOffers)}
+        ${this.renderOfferList('Incoming', this.store.incomingOffers)}
       </div>
-      ${this.renderOfferList('Outgoing', this.transactorStore.outgoingOffers)}
+      ${this.renderOfferList('Outgoing', this.store.outgoingOffers)}
     </div>`;
   }
 

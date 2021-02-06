@@ -33,13 +33,12 @@
         MyOffers,
         PendingOfferList,
         MyBalance,
-        connectTransactor,
         PublicTransactorService,
         TransactorStore,
       } from '../dist';
+      import { connectStore } from '@holochain-open-dev/common';
       import {
         ProfilePrompt,
-        connectProfiles,
         ProfilesStore,
         ProfilesService,
       } from '@holochain-open-dev/profiles';
@@ -73,16 +72,16 @@
 
         customElements.define(
           'profile-prompt',
-          connectProfiles(ProfilePrompt, profilesStore)
+          connectStore(ProfilePrompt, profilesStore)
         );
         customElements.define(
           'create-offer',
-          connectTransactor(CreateOffer, store)
+          connectStore(CreateOffer, store)
         );
-        customElements.define('my-offers', connectTransactor(MyOffers, store));
+        customElements.define('my-offers', connectStore(MyOffers, store));
         customElements.define(
           'my-balance',
-          connectTransactor(MyBalance, store)
+          connectStore(MyBalance, store)
         );
       })();
     </script>

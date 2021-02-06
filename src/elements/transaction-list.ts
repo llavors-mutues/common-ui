@@ -1,17 +1,16 @@
 import { LitElement, property, html, PropertyValues } from 'lit-element';
-import { Hashed } from '@holochain-open-dev/common';
+import { Hashed, StoreElement } from '@holochain-open-dev/common';
 
 import { List } from 'scoped-material-components/mwc-list';
 import { CircularProgress } from 'scoped-material-components/mwc-circular-progress';
 
-import type { Transaction } from '../types';
 import { sharedStyles } from './utils/shared-styles';
 import { dateString } from '../utils';
-import { BaseElement } from './utils/base-element';
 import { Icon } from 'scoped-material-components/mwc-icon';
 import { ListItem } from 'scoped-material-components/mwc-list-item';
+import { TransactorStore } from '../transactor.store';
 
-export abstract class TransactionList extends BaseElement {
+export abstract class TransactionList extends StoreElement<TransactorStore> {
   /** Public attributes */
 
   /** Private properties */
@@ -22,7 +21,7 @@ export abstract class TransactionList extends BaseElement {
   static styles = sharedStyles;
 
   async firstUpdated() {
-    await this.transactorStore.fetchMyTransactions();
+    await this.store.fetchMyTransactions();
     this._loading = false;
   }
 
@@ -43,7 +42,7 @@ export abstract class TransactionList extends BaseElement {
         </div>
       `;
 
-    const myTransactions = this.transactorStore.myTransactions;
+    const myTransactions = this.store.myTransactions;
 
     if (myTransactions.length === 0)
       return html`<div class="padding">
@@ -62,32 +61,32 @@ export abstract class TransactionList extends BaseElement {
                 style="flex: 1;"
               >
                 <span>
-                  ${this.transactorStore.isOutgoing(transaction.content)
+                  ${this.store.isOutgoing(transaction.content)
                     ? 'To '
                     : 'From '}
-                  ${this.transactorStore.counterpartyNickname(
+                  ${this.store.counterpartyNickname(
                     transaction.content
                   )}
                   on ${dateString(transaction.content.timestamp)}
                 </span>
                 <span slot="secondary"
-                  >${this.transactorStore.counterpartyKey(transaction.content)}
+                  >${this.store.counterpartyKey(transaction.content)}
                 </span>
                 <mwc-icon
                   slot="graphic"
-                  .style="color: ${this.transactorStore.isOutgoing(
+                  .style="color: ${this.store.isOutgoing(
                     transaction.content
                   )
                     ? 'red'
                     : 'green'}"
-                  >${this.transactorStore.isOutgoing(transaction.content)
+                  >${this.store.isOutgoing(transaction.content)
                     ? 'call_made'
                     : 'call_received'}</mwc-icon
                 >
               </mwc-list-item>
 
               <span style="font-size: 20px; margin: 0 24px;">
-                ${this.transactorStore.isOutgoing(transaction.content)
+                ${this.store.isOutgoing(transaction.content)
                   ? '-'
                   : '+'}${transaction.content.amount}
                 credits

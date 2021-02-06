@@ -3,9 +3,10 @@ import { Button } from 'scoped-material-components/mwc-button';
 import { CircularProgress } from 'scoped-material-components/mwc-circular-progress';
 import { sharedStyles } from './utils/shared-styles';
 import { Offer } from '../types';
-import { BaseElement } from './utils/base-element';
+import { StoreElement } from '@holochain-open-dev/common';
+import { TransactorStore } from '../transactor.store';
 
-export abstract class OfferDetail extends BaseElement {
+export abstract class OfferDetail extends StoreElement<TransactorStore> {
   /** Public attributes */
 
   /**
@@ -41,14 +42,14 @@ export abstract class OfferDetail extends BaseElement {
   /** Actions */
 
   async firstUpdated() {
-    await this.transactorStore.fetchMyPendingOffers();
+    await this.store.fetchMyPendingOffers();
     this._loading = false;
   }
 
   async acceptOffer() {
     this._accepting = true;
 
-    await this.transactorStore.acceptOffer(this.offerHash);
+    await this.store.acceptOffer(this.offerHash);
 
     this.dispatchEvent(
       new CustomEvent('offer-completed', {
@@ -61,7 +62,7 @@ export abstract class OfferDetail extends BaseElement {
   }
 
   get offer(): Offer {
-    return this.transactorStore.offer(this.offerHash);
+    return this.store.offer(this.offerHash);
   }
 
   /** Renders */
@@ -88,9 +89,8 @@ export abstract class OfferDetail extends BaseElement {
       <div class="row" style="flex: 1;">
         <div class="column">
           <span class="item title">
-            Offer
-            ${this.transactorStore.isOutgoing(this.offer) ? ' to ' : ' from '}
-            ${this.transactorStore.counterpartyNickname(this.offer)}
+            Offer ${this.store.isOutgoing(this.offer) ? ' to ' : ' from '}
+            ${this.store.counterpartyNickname(this.offer)}
           </span>
           <span class="item">Agend ID: ${this.offer.recipient_pub_key}</span>
 
@@ -110,7 +110,7 @@ export abstract class OfferDetail extends BaseElement {
   }
 
   renderAcceptOffer() {
-    if (this.transactorStore.isOutgoing(this.offer)) {
+    if (this.store.isOutgoing(this.offer)) {
       return html`<mwc-button
         style="flex: 1;"
         label="Awaiting for approval"

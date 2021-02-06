@@ -1,5 +1,5 @@
+import { Dictionary } from '@compository/lib';
 import { Hashed, serializeHash } from '@holochain-open-dev/common';
-import { Dictionary } from '@holochain-open-dev/common/core-types';
 import { ProfilesStore } from '@holochain-open-dev/profiles/profiles.store';
 import {
   observable,

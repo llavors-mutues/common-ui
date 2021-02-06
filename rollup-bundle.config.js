@@ -11,22 +11,21 @@ export default {
   output: [{ dir: './bundle', format: 'es', sourcemap: true }],
   // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash-es')
   external: [],
-  watch: {
-    include: 'src/**',
-  },
   plugins: [
     replace({
-      'window.customElements.define': '',
       'customElements.define': '',
-      'Avatar.define();': '',
+      'process.env.NODE_ENV': '"production"',
+      'window.customElements.define': '',
       delimiters: ['', ''],
     }),
     typescript({
       outDir: 'bundle',
     }),
-    resolve(),
+    resolve({
+      browser: true,
+    }),
     commonjs({
-      include: [],
+      include: [/node_modules/],
     }),
     terser(),
   ],

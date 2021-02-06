@@ -1,12 +1,13 @@
 import { html } from 'lit-html';
 import { Card } from 'scoped-material-components/mwc-card';
+import { connectStore, StoreElement } from '@holochain-open-dev/common';
 import { TransactionList } from './transaction-list';
-import { BaseElement, connectTransactor } from './utils/base-element';
 import { sharedStyles } from './utils/shared-styles';
+import { TransactorStore } from '../transactor.store';
 
-export abstract class MyBalance extends BaseElement {
+export abstract class MyBalance extends StoreElement<TransactorStore> {
   render() {
-    const balance = Math.round(this.transactorStore.myBalance * 100) / 100;
+    const balance = Math.round(this.store.myBalance * 100) / 100;
     return html`
       <div class="column center-content" style="flex: 1;">
         <span style="font-size: 24px; margin: 16px;">
@@ -25,10 +26,7 @@ export abstract class MyBalance extends BaseElement {
 
   getScopedElements() {
     return {
-      'transaction-list': connectTransactor(
-        TransactionList,
-        this.transactorStore
-      ),
+      'transaction-list': connectStore(TransactionList, this.store),
       'mwc-card': Card,
     };
   }
